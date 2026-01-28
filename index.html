@@ -620,6 +620,7 @@
       <label>Tags (comma-separated, or select characters)</label>
       <input id="noteTags" type="text" placeholder="character1, character2" />
       <div id="characterTagsList" style="font-size: 12px; margin-top: 10px;"></div>
+      
     </div>
     
     <div class="form-group">
@@ -3776,63 +3777,56 @@ function renderRelationshipNotes() {
     relationshipNotes.innerHTML = "<p style='color: #999; padding: 20px; text-align: center;'>Select characters to view shared interactions</p>";
     return;
   }
-  
+
   const query = relationshipSearch.value.toLowerCase();
-  
+
   // Get selected character names
-  const selectedNames = selectedRelationships.map(id => 
+  const selectedNames = selectedRelationships.map(id =>
     db.characters.find(x => x.id === id)?.name
   ).filter(Boolean);
-  
-  // 1. Notes from current character that mention selected characters
+
+  // 1. Notes from current character that mention any selected characters
   const ownNotes = c.notes.filter(note => {
-    const hasAllSelected = selectedRelationships.every(charId => {
+    const hasAnySelected = selectedRelationships.some(charId => {
       const char = db.characters.find(x => x.id === charId);
       return note.tags.includes(char.name);
     });
-    
-    if (!hasAllSelected) return false;
+
+    if (!hasAnySelected) return false;
     if (!query) return true;
-    return note.text.toLowerCase().includes(query) || 
+    return note.text.toLowerCase().includes(query) ||
            note.story.toLowerCase().includes(query);
   });
-  
-  // 2. Notes from OTHER characters that mention current character AND selected characters
+
+  // 2. Notes from selected characters that mention current character
   const otherNotes = [];
-  db.characters.forEach(otherChar => {
-    if (otherChar.id === c.id) return; // Skip self
-    if (selectedRelationships.includes(otherChar.id)) return; // Skip if they're in the selection
-    
-    otherChar.notes.forEach(note => {
+  selectedRelationships.forEach(selectedId => {
+    const selectedChar = db.characters.find(ch => ch.id === selectedId);
+    if (!selectedChar) return;
+
+    selectedChar.notes.forEach(note => {
       // Must mention current character
       if (!note.tags.includes(c.name)) return;
-      
-      // Must mention all selected characters
-      const hasAllSelected = selectedRelationships.every(charId => {
-        const char = db.characters.find(x => x.id === charId);
-        return note.tags.includes(char.name);
-      });
-      if (!hasAllSelected) return;
-      
+
       // Apply search filter
-      if (query && !note.text.toLowerCase().includes(query) && 
+      if (query && !note.text.toLowerCase().includes(query) &&
           !note.story.toLowerCase().includes(query)) return;
-      
+
       otherNotes.push({
         ...note,
-        fromCharacter: otherChar.name,
-        fromCharacterId: otherChar.id
+        fromCharacter: selectedChar.name,
+        fromCharacterId: selectedChar.id
       });
     });
   });
-  
+
   const allNotes = [...ownNotes, ...otherNotes];
-  
+
   if (allNotes.length === 0) {
     relationshipNotes.innerHTML = "<p style='color: #999; padding: 20px; text-align: center;'>No shared interactions found</p>";
     return;
   }
-  
+
   relationshipNotes.innerHTML = `<strong>Shared Interactions (${allNotes.length}):</strong>`;
   allNotes.forEach(note => {
     const div = document.createElement("div");
@@ -3841,7 +3835,7 @@ function renderRelationshipNotes() {
     div.style.cursor = "pointer";
     const noteFromOther = note.fromCharacter;
     const sourceText = noteFromOther ? ` <span style="font-size: 11px; color: #999;">(from ${noteFromOther})</span>` : '';
-    
+
     div.onclick = () => {
       if (noteFromOther) {
         // Switch to other character's view
@@ -3855,7 +3849,7 @@ function renderRelationshipNotes() {
         openNoteModal(note.id);
       }
     };
-    
+
     div.innerHTML = `
       <strong>${note.story} — ${note.chapter}${sourceText}</strong>
       <div>${note.text}</div>
