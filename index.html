@@ -534,6 +534,12 @@
   <div class="panel">
     <h2>Characters</h2>
     
+    <!-- Character Search -->
+    <div style="margin-bottom: 12px; display: flex; gap: 6px;">
+      <input id="charSearchInput" type="text" placeholder="🔍 Search characters..." style="flex: 1; font-size: 13px; padding: 6px 8px; border: 1.5px solid #ffe0d0; border-radius: 6px;" />
+      <button id="charSearchClear" onclick="clearCharacterSearch()" style="width: auto; padding: 6px 10px; font-size: 12px; margin: 0;">✕</button>
+    </div>
+    
     <!-- Character Folders Management -->
     <div style="margin-bottom: 16px; padding: 12px; background: rgba(215, 90, 143, .06); border-radius: 8px; border: 1.5px solid rgba(215, 90, 143, .15);">
       <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #d75a8f;">Character Folders</h4>
@@ -663,13 +669,17 @@
   <div id="relationshipBackdrop" onclick="closeRelationshipsPanel()"></div>
 
   <!-- TOP TOOLBAR -->
-  <div style="position: fixed; top: 0; right: 200px; background: #fff5f0; border-bottom: 1.5px solid #ffe0d0; padding: 12px 16px; display: flex; gap: 8px; z-index: 100;">
+  <div id="topToolbar" style="position: fixed; top: 0; right: 200px; background: #fff5f0; border-bottom: 1.5px solid #ffe0d0; padding: 12px 16px; display: flex; gap: 8px; z-index: 100; transition: all .3s;">
     <button onclick="openProjectMenu()" style="background: rgba(230, 100, 100, .2); border: 1.5px solid rgba(230, 100, 100, .4); color: #e66464; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">⚙️ Project</button>
     <button onclick="saveData()" style="background: rgba(76, 175, 140, .2); border: 1.5px solid rgba(76, 175, 140, .4); color: #4cb58c; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">💾 Save Data</button>
     <button onclick="loadData()" style="background: rgba(125, 211, 252, .2); border: 1.5px solid rgba(125, 211, 252, .4); color: #4fa2ff; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📂 Load Data</button>
     <button onclick="toggleMetadata()" style="background: rgba(180, 140, 255, .2); border: 1.5px solid rgba(180, 140, 255, .4); color: #b48cff; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📋 Metadata</button>
     <button onclick="resetLayout()" style="background: rgba(255, 150, 100, .2); border: 1.5px solid rgba(255, 150, 100, .4); color: #ff9664; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">↺ Reset Layout</button>
+    <button onclick="toggleToolbar()" style="background: rgba(200, 100, 100, .2); border: 1.5px solid rgba(200, 100, 100, .4); color: #c86464; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">▲ Hide</button>
   </div>
+  
+  <!-- TOOLBAR TOGGLE BUTTON (Hidden) -->
+  <button id="toolbarToggleBtn" onclick="toggleToolbar()" style="position: fixed; top: 0; right: 200px; background: rgba(200, 100, 100, .2); border: 1.5px solid rgba(200, 100, 100, .4); color: #c86464; padding: 8px 12px; border-radius: 0 0 6px 6px; cursor: pointer; font-size: 13px; font-weight: 600; display: none; z-index: 99;">▼ Show</button>
 
   <!-- PROJECT MENU BACKDROP -->
   <div id="projectMenuBackdrop" onclick="closeProjectMenu()" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,.25); z-index: 999;"></div>
@@ -1091,7 +1101,21 @@ let db = JSON.parse(localStorage.getItem(STORAGE)) || { characters: [], dorms: [
 if (!db.dorms) db.dorms = [];
 if (!db.units) db.units = [];
 if (!db.others) db.others = [];
-if (!db.characterFolders) db.characterFolders = ["Unsorted"];
+
+// Migrate characterFolders to nested structure if needed
+if (!db.characterFolders || db.characterFolders.length === 0 || typeof db.characterFolders[0] === 'string') {
+  // Old flat structure - convert to nested
+  const oldFolders = db.characterFolders || ["Unsorted"];
+  db.characterFolders = oldFolders.map(name => ({
+    name: name,
+    children: []
+  }));
+}
+
+// Ensure Unsorted folder exists
+if (!db.characterFolders.some(f => f.name === "Unsorted")) {
+  db.characterFolders.unshift({ name: "Unsorted", children: [] });
+}
 
 // Migrate existing characters to have folder and order properties
 db.characters.forEach((char, idx) => {
@@ -1222,6 +1246,47 @@ function toggleMetadata() {
   sidebar.classList.toggle('open');
 }
 
+/* ---------- TOOLBAR VISIBILITY ---------- */
+function toggleToolbar() {
+  const toolbar = document.getElementById('topToolbar');
+  const toggleBtn = document.getElementById('toolbarToggleBtn');
+  
+  const isHidden = toolbar.style.display === 'none';
+  
+  if (isHidden) {
+    toolbar.style.display = 'flex';
+    toggleBtn.style.display = 'none';
+    localStorage.setItem('toolbarVisible', 'true');
+  } else {
+    toolbar.style.display = 'none';
+    toggleBtn.style.display = 'block';
+    localStorage.setItem('toolbarVisible', 'false');
+  }
+}
+
+// Restore toolbar visibility on load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    const toolbarVisible = localStorage.getItem('toolbarVisible') !== 'false';
+    const toolbar = document.getElementById('topToolbar');
+    const toggleBtn = document.getElementById('toolbarToggleBtn');
+    
+    if (!toolbarVisible) {
+      toolbar.style.display = 'none';
+      toggleBtn.style.display = 'block';
+    }
+  });
+} else {
+  const toolbarVisible = localStorage.getItem('toolbarVisible') !== 'false';
+  const toolbar = document.getElementById('topToolbar');
+  const toggleBtn = document.getElementById('toolbarToggleBtn');
+  
+  if (!toolbarVisible) {
+    toolbar.style.display = 'none';
+    toggleBtn.style.display = 'block';
+  }
+}
+
 /* ---------- METADATA SIDEBAR RESIZING ---------- */
 let isResizingMetadata = false;
 const metadataResizeHandle = document.getElementById('metadataResizeHandle');
@@ -1261,14 +1326,22 @@ let resizeStartWidth = 0;
 
 function updateGridLayout() {
   const panels = document.querySelectorAll('body > .panel');
-  const widths = Array.from(panels).map(p => {
-    const width = p.style.width || (p.offsetWidth + 'px');
-    return width;
-  }).join(' ');
+  let gridTemplate = '';
   
-  if (widths) {
-    document.body.style.gridTemplateColumns = widths;
-    localStorage.setItem('gridTemplateColumns', widths);
+  panels.forEach((p, idx) => {
+    if (idx === 0) {
+      // First panel (character list) - use actual rendered width
+      const width = p.offsetWidth + 'px';
+      gridTemplate += width;
+    } else {
+      // Other panels - use flexible 1fr for expansion
+      gridTemplate += ' 1fr';
+    }
+  });
+  
+  if (gridTemplate) {
+    document.body.style.gridTemplateColumns = gridTemplate;
+    localStorage.setItem('gridTemplateColumns', gridTemplate);
   }
 }
 
@@ -1342,13 +1415,15 @@ function initializePanelResize() {
     document.body.style.gridTemplateColumns = savedGridLayout;
   }
   
-  panels.forEach((panel, idx) => {
-    const panelId = panel.id || 'panel-' + idx;
+  // Only set explicit width on left panel to allow middle/right to expand with 1fr
+  const leftPanel = panels[0];
+  if (leftPanel) {
+    const panelId = leftPanel.id || 'panel-0';
     const savedWidth = localStorage.getItem('panelWidth-' + panelId);
-    if (savedWidth && !panel.classList.contains('expanded')) {
-      panel.style.width = savedWidth + 'px';
+    if (savedWidth) {
+      leftPanel.style.width = savedWidth + 'px';
     }
-  });
+  }
 }
 
 // Initialize panel resizing when document is ready
@@ -2520,21 +2595,81 @@ function renderCharacterFoldersManager() {
   const manager = document.getElementById("characterFoldersManager");
   manager.innerHTML = "";
   
-  db.characterFolders.forEach((folderName, idx) => {
+  db.characterFolders.forEach((folder, idx) => {
     const span = document.createElement("span");
-    span.style.cssText = "display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: rgba(215, 90, 143, .15); border: 1px solid rgba(215, 90, 143, .25); border-radius: 4px; font-size: 12px;";
+    span.style.cssText = `display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: rgba(215, 90, 143, .15); border: 1px solid rgba(215, 90, 143, .25); border-radius: 4px; font-size: 12px; margin-right: 4px; margin-bottom: 4px; cursor: grab; transition: all 0.2s;`;
+    span.dataset.folderIdx = idx;
+    span.draggable = true;
     
     const nameEl = document.createElement("span");
-    nameEl.textContent = folderName;
+    nameEl.textContent = folder.name;
+    nameEl.style.userSelect = "none";
     span.appendChild(nameEl);
     
-    if (folderName !== 'Unsorted') {
+    // Show subfolder count if any
+    if (folder.children && folder.children.length > 0) {
+      const count = document.createElement("span");
+      count.style.cssText = "font-size: 10px; color: #999; margin-left: 4px;";
+      count.textContent = `(${folder.children.length})`;
+      span.appendChild(count);
+    }
+    
+    // Drag handlers for creating subfolders
+    span.ondragstart = (e) => {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("folderIdx", idx);
+      e.dataTransfer.setData("folderName", folder.name);
+      span.style.opacity = "0.5";
+    };
+    
+    span.ondragend = () => {
+      span.style.opacity = "1";
+    };
+    
+    span.ondragover = (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      span.style.opacity = "0.7";
+      span.style.background = "rgba(215, 90, 143, .35)";
+    };
+    
+    span.ondragleave = () => {
+      span.style.opacity = "1";
+      span.style.background = "rgba(215, 90, 143, .15)";
+    };
+    
+    span.ondrop = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      span.style.opacity = "1";
+      span.style.background = "rgba(215, 90, 143, .15)";
+      
+      const draggedFolderIdx = parseInt(e.dataTransfer.getData("folderIdx"));
+      const draggedFolderName = e.dataTransfer.getData("folderName");
+      
+      // Can't drop a folder into itself or Unsorted
+      if (draggedFolderIdx === idx || folder.name === 'Unsorted') return;
+      
+      // Move dragged folder into this folder as a subfolder
+      if (draggedFolderIdx !== undefined && draggedFolderName) {
+        const draggedFolder = db.characterFolders[draggedFolderIdx];
+        if (draggedFolder && !folder.children.some(f => f.name === draggedFolder.name)) {
+          if (!folder.children) folder.children = [];
+          folder.children.push(draggedFolder);
+          db.characterFolders.splice(draggedFolderIdx, 1);
+          save();
+          renderCharacters();
+        }
+      }
+    };
+    
+    if (folder.name !== 'Unsorted') {
       const deleteBtn = document.createElement("span");
       deleteBtn.textContent = "✕";
       deleteBtn.style.cssText = "cursor: pointer; font-weight: bold; margin-left: 2px;";
       deleteBtn.onclick = (e) => {
         e.stopPropagation();
-        deleteCharacterFolder(folderName);
+        deleteCharacterFolder(folder.name);
       };
       span.appendChild(deleteBtn);
     }
@@ -2543,40 +2678,86 @@ function renderCharacterFoldersManager() {
   });
 }
 
+// Helper: Flatten nested folder structure into path-based lookup
+
+
 function renderCharacters() {
   initializeDefaults();
   characterList.innerHTML = "";
   renderCharacterFoldersManager();
   
-  // Group characters by folder
+  // Get search term
+  const searchTerm = (document.getElementById("charSearchInput")?.value || "").toLowerCase();
+  
+  // Ensure characterFolders exists and is in proper format
+  if (!db.characterFolders || typeof db.characterFolders[0] === 'string') {
+    // Old format - convert
+    const oldFolders = db.characterFolders || ["Unsorted"];
+    db.characterFolders = oldFolders.map(name => ({
+      name: name,
+      children: []
+    }));
+    if (!db.characterFolders.some(f => f.name === "Unsorted")) {
+      db.characterFolders.unshift({ name: "Unsorted", children: [] });
+    }
+  }
+  
+  // Simple render: treat as flat list for now
   const grouped = {};
   db.characterFolders.forEach(folder => {
-    grouped[folder] = [];
+    grouped[folder.name] = [];
   });
   
   db.characters.forEach(c => {
-    const folder = c.folder || "Unsorted";
-    if (!grouped[folder]) grouped[folder] = [];
-    grouped[folder].push(c);
+    const folderName = c.folder || "Unsorted";
+    if (!grouped[folderName]) grouped[folderName] = [];
+    grouped[folderName].push(c);
   });
   
-  // Sort characters within each folder by order
+  // Sort characters
   Object.keys(grouped).forEach(folder => {
     grouped[folder].sort((a, b) => (a.order || 0) - (b.order || 0));
   });
   
-  // Render folders with characters
-  db.characterFolders.forEach(folderName => {
+  // Render folders
+  db.characterFolders.forEach(folder => {
+    const folderName = folder.name;
     const characters = grouped[folderName] || [];
+    
+    // Skip empty folders when searching
+    if (searchTerm && characters.length === 0) return;
     
     const folderEl = document.createElement("div");
     folderEl.className = "folder";
     folderEl.dataset.folder = folderName;
     
     const header = document.createElement("h4");
-    header.style.cssText = "margin: 12px 0 8px 0; font-size: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;";
-    header.textContent = `${folderName} (${characters.length})`;
-    header.onclick = () => folderEl.classList.toggle("collapsed");
+    header.style.cssText = "margin: 12px 0 8px 0; font-size: 14px; cursor: pointer; display: flex; justify-content: flex-start; align-items: center; gap: 8px; user-select: none;";
+    
+    // Add expand/collapse indicator
+    const toggleIcon = document.createElement("span");
+    toggleIcon.style.cssText = "display: inline-block; width: 16px; text-align: center; font-size: 12px; transition: transform .2s;";
+    toggleIcon.textContent = "▼";
+    header.appendChild(toggleIcon);
+    
+    const titleEl = document.createElement("span");
+    titleEl.textContent = `${folderName} (${characters.length})`;
+    titleEl.style.flex = "1";
+    header.appendChild(titleEl);
+    
+    // Check collapsed state
+    let isCollapsed = localStorage.getItem(`folder-collapsed-${folderName}`) === "true";
+    
+    // Update toggle icon on click
+    header.onclick = () => {
+      isCollapsed = !isCollapsed;
+      localStorage.setItem(`folder-collapsed-${folderName}`, isCollapsed);
+      renderCharacters();
+    };
+    
+    if (isCollapsed) {
+      toggleIcon.style.transform = "rotate(-90deg)";
+    }
     
     // Add drag-over and drop handlers to header
     header.ondragover = (e) => e.preventDefault();
@@ -2591,6 +2772,9 @@ function renderCharacters() {
     const charList = document.createElement("div");
     charList.className = "folder-notes";
     charList.style.cssText = "display: flex; flex-direction: column; gap: 6px;";
+    if (isCollapsed) {
+      charList.style.display = "none";
+    }
     
     // Add drag-over and drop handlers to folder container
     charList.ondragover = (e) => e.preventDefault();
@@ -2600,37 +2784,38 @@ function renderCharacters() {
       moveCharacterToFolder(draggedCharId, folderName);
     };
     
-    characters.forEach((c, idx) => {
-      const div = document.createElement("div");
-      div.className = "item" + (c.id === activeChar ? " active" : "");
-      div.textContent = c.name;
-      div.draggable = true;
-      div.dataset.charId = c.id;
-      div.dataset.folder = folderName;
-      div.dataset.order = idx;
-      
-      div.ondragstart = (e) => {
-        e.dataTransfer.effectAllowed = "move";
-        e.dataTransfer.setData("charId", c.id);
-        e.dataTransfer.setData("fromFolder", folderName);
-      };
-      
-      div.ondragover = (e) => e.preventDefault();
-      
-      div.ondrop = (e) => {
-        e.preventDefault();
-        const draggedCharId = e.dataTransfer.getData("charId");
-        const fromFolder = e.dataTransfer.getData("fromFolder");
-        if (draggedCharId !== c.id) {
-          reorderCharacters(draggedCharId, c.id, folderName);
-        }
-      };
-      
-      div.onclick = () => selectCharacter(c.id);
-      charList.appendChild(div);
-    });
+    characters
+      .filter(c => !searchTerm || c.name.toLowerCase().includes(searchTerm))
+      .forEach((c, idx) => {
+        const div = document.createElement("div");
+        div.className = "item" + (c.id === activeChar ? " active" : "");
+        div.textContent = c.name;
+        div.draggable = true;
+        div.dataset.charId = c.id;
+        div.dataset.folder = folderName;
+        div.dataset.order = idx;
+        
+        div.ondragstart = (e) => {
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("charId", c.id);
+          e.dataTransfer.setData("fromFolder", folderName);
+        };
+        
+        div.ondragover = (e) => e.preventDefault();
+        
+        div.ondrop = (e) => {
+          e.preventDefault();
+          const draggedCharId = e.dataTransfer.getData("charId");
+          if (draggedCharId !== c.id) {
+            reorderCharacters(draggedCharId, c.id, folderName);
+          }
+        };
+        
+        div.onclick = () => selectCharacter(c.id);
+        charList.appendChild(div);
+      });
     
-    if (characters.length === 0) {
+    if (characters.length === 0 && !searchTerm) {
       const emptyMsg = document.createElement("div");
       emptyMsg.style.cssText = "font-size: 12px; color: #999; padding: 8px; text-align: center;";
       emptyMsg.textContent = "No characters in this folder";
@@ -2650,6 +2835,61 @@ function renderCharacters() {
   updateCharacterTagsList();
 }
 
+function clearCharacterSearch() {
+  document.getElementById("charSearchInput").value = "";
+  renderCharacters();
+}
+
+// Helper: Find folder object by path (e.g., "Main Cast/Protagonists")
+function findFolderByPath(path) {
+  if (path === "Unsorted") {
+    return db.characterFolders.find(f => f.name === "Unsorted");
+  }
+  
+  const parts = path.split("/");
+  let currentLevel = db.characterFolders;
+  
+  for (let part of parts) {
+    const folder = currentLevel.find(f => f.name === part);
+    if (!folder) return null;
+    currentLevel = folder.children || [];
+  }
+  
+  return currentLevel.length > 0 ? currentLevel[currentLevel.length - 1] : null;
+}
+
+// Helper: Create a subfolder within a parent folder
+function createSubfolderInParent(parentPath, subfolderName) {
+  if (!parentPath) {
+    // Create at root level
+    db.characterFolders.push({ name: subfolderName, children: [] });
+  } else {
+    // Find parent and add to its children
+    const parts = parentPath.split("/");
+    let currentLevel = db.characterFolders;
+    
+    for (let part of parts) {
+      const folder = currentLevel.find(f => f.name === part);
+      if (!folder) return false;
+      currentLevel = folder.children || [];
+    }
+    
+    // Add to the last level (parent's children)
+    const parentFolder = currentLevel[currentLevel.length - 1];
+    if (!parentFolder) {
+      // Parent wasn't found correctly, try different approach
+      const parent = findFolderByPath(parentPath);
+      if (!parent) return false;
+      if (!parent.children) parent.children = [];
+      parent.children.push({ name: subfolderName, children: [] });
+    } else {
+      parentFolder.children = parentFolder.children || [];
+      parentFolder.children.push({ name: subfolderName, children: [] });
+    }
+  }
+  return true;
+}
+
 function createCharacterFolder() {
   const name = document.getElementById("newCharFolderName").value.trim();
   if (!name) {
@@ -2657,12 +2897,14 @@ function createCharacterFolder() {
     return;
   }
   
-  if (db.characterFolders.includes(name)) {
+  // Check if folder already exists
+  if (db.characterFolders.some(f => f.name === name)) {
     alert("Folder already exists");
     return;
   }
   
-  db.characterFolders.push(name);
+  // Add to root level
+  db.characterFolders.push({ name: name, children: [] });
   document.getElementById("newCharFolderName").value = "";
   save();
   renderCharacters();
@@ -2682,7 +2924,8 @@ function deleteCharacterFolder(folderName) {
     charsInFolder.forEach(c => c.folder = "Unsorted");
   }
   
-  db.characterFolders = db.characterFolders.filter(f => f !== folderName);
+  // Remove folder from root level
+  db.characterFolders = db.characterFolders.filter(f => f.name !== folderName);
   save();
   renderCharacters();
 }
@@ -2757,12 +3000,23 @@ addCharacter.onclick = () => {
 
 document.getElementById("addCharFolder").onclick = createCharacterFolder;
 
+document.getElementById("charSearchInput").addEventListener("input", (e) => {
+  renderCharacters();
+});
+
+document.getElementById("charSearchInput").addEventListener("keypress", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    renderCharacters();
+  }
+});
+
 document.getElementById("deleteCharacter").onclick = () => {
   const c = current();
   if (!c) return;
   
   if (!confirm(`Delete "${c.name}" and all their notes?\n\nThis action cannot be undone.`)) return;
-  
+
   // Remove character from dorms
   if (c.dormId) {
     const dorm = db.dorms.find(d => d.id === c.dormId);
