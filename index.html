@@ -616,9 +616,35 @@
 
   <!-- TOP TOOLBAR -->
   <div style="position: fixed; top: 0; right: 200px; background: #fff5f0; border-bottom: 1.5px solid #ffe0d0; padding: 12px 16px; display: flex; gap: 8px; z-index: 100;">
+    <button onclick="openProjectMenu()" style="background: rgba(230, 100, 100, .2); border: 1.5px solid rgba(230, 100, 100, .4); color: #e66464; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">⚙️ Project</button>
     <button onclick="saveData()" style="background: rgba(76, 175, 140, .2); border: 1.5px solid rgba(76, 175, 140, .4); color: #4cb58c; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">💾 Save Data</button>
     <button onclick="loadData()" style="background: rgba(125, 211, 252, .2); border: 1.5px solid rgba(125, 211, 252, .4); color: #4fa2ff; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📂 Load Data</button>
     <button onclick="toggleMetadata()" style="background: rgba(180, 140, 255, .2); border: 1.5px solid rgba(180, 140, 255, .4); color: #b48cff; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📋 Metadata</button>
+  </div>
+
+  <!-- PROJECT MENU BACKDROP -->
+  <div id="projectMenuBackdrop" onclick="closeProjectMenu()" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,.25); z-index: 999;"></div>
+
+  <!-- PROJECT MENU -->
+  <div id="projectMenu" style="display: none; position: fixed; right: 12px; top: 60px; background: #fff5f0; border: 1.5px solid #ffe0d0; border-radius: 10px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,.15); min-width: 200px; overflow: hidden;">
+    <div style="padding: 16px; border-bottom: 1.5px solid #ffe0d0;">
+      <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #d75a8f;">Project Menu</h3>
+    </div>
+    <button onclick="newProject()" style="width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; border-bottom: 1px solid #ffe0d0; color: #2d2d2d; font-size: 14px; cursor: pointer; font-weight: 500; transition: all .15s;">
+      ✨ New Project
+    </button>
+    <button onclick="newProject()" style="width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; border-bottom: 1px solid #ffe0d0; color: #2d2d2d; font-size: 14px; cursor: pointer; font-weight: 500; transition: all .15s;" onmouseover="this.style.background='rgba(215,90,143,.08)'" onmouseout="this.style.background='none'">
+      ✨ New Project
+    </button>
+    <button onclick="saveData(); closeProjectMenu();" style="width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; border-bottom: 1px solid #ffe0d0; color: #4cb58c; font-size: 14px; cursor: pointer; font-weight: 500; transition: all .15s;" onmouseover="this.style.background='rgba(76,175,140,.08)'" onmouseout="this.style.background='none'">
+      💾 Save Project
+    </button>
+    <button onclick="loadData(); closeProjectMenu();" style="width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; border-bottom: 1px solid #ffe0d0; color: #4fa2ff; font-size: 14px; cursor: pointer; font-weight: 500; transition: all .15s;" onmouseover="this.style.background='rgba(125,211,252,.08)'" onmouseout="this.style.background='none'">
+      📂 Load Project
+    </button>
+    <button onclick="exportAllData()" style="width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; color: #666; font-size: 14px; cursor: pointer; font-weight: 500; transition: all .15s;" onmouseover="this.style.background='rgba(100,100,100,.08)'" onmouseout="this.style.background='none'">
+      📦 Export as File
+    </button>
   </div>
 
   <!-- FAMILY MODAL PANEL -->
@@ -1028,6 +1054,68 @@ const save = () => localStorage.setItem(STORAGE, JSON.stringify(db));
 const uid = () => Math.random().toString(36).slice(2);
 
 /* ---------- SAVE/LOAD/METADATA ---------- */
+function openProjectMenu() {
+  document.getElementById('projectMenuBackdrop').style.display = 'block';
+  document.getElementById('projectMenu').style.display = 'block';
+}
+
+function closeProjectMenu() {
+  document.getElementById('projectMenuBackdrop').style.display = 'none';
+  document.getElementById('projectMenu').style.display = 'none';
+}
+
+function newProject() {
+  if (!confirm('Start a new project?\n\nThis will clear all current data. Make sure you have saved your work first!')) {
+    return;
+  }
+  
+  // Reset to empty database
+  db = {
+    characters: [],
+    dorms: [],
+    units: [],
+    others: [],
+    folders: []
+  };
+  
+  save();
+  activeChar = null;
+  
+  // Reset all UI
+  renderCharacters();
+  document.getElementById('charPanel').style.display = 'none';
+  document.getElementById('textMessagesPanel').style.display = 'none';
+  document.getElementById('galleryPanel').style.display = 'none';
+  document.getElementById('relationshipsPanel').classList.remove('panel-open');
+  document.getElementById('relationshipBackdrop').classList.remove('open');
+  document.getElementById('metadataSidebar').classList.remove('open');
+  
+  // Clear all form fields
+  document.getElementById('storyName').value = '';
+  document.getElementById('chapterName').value = '';
+  document.getElementById('noteText').value = '';
+  document.getElementById('noteTags').value = '';
+  document.getElementById('newFolderName').value = '';
+  document.getElementById('searchNotes').value = '';
+  document.getElementById('searchResults').innerHTML = '';
+  
+  closeProjectMenu();
+  alert('New project started! Begin creating your characters.');
+}
+
+function exportAllData() {
+  const dataStr = JSON.stringify(db, null, 2);
+  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `character-ecology-${new Date().toISOString().split('T')[0]}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  closeProjectMenu();
+  alert('Project exported successfully!');
+}
+
 function saveData() {
   const dataStr = JSON.stringify(db, null, 2);
   const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -1060,6 +1148,7 @@ function loadData() {
           if (db.characters.length > 0) {
             selectCharacter(db.characters[0].id);
           }
+          closeProjectMenu();
           alert('Data loaded successfully!');
         }
       } catch (err) {
