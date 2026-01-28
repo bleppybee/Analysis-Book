@@ -3372,10 +3372,41 @@ document.getElementById("saveNoteModal").onclick = () => {
   const note = c.notes.find(n => n.id === editingNoteId);
   if (!note) return;
 
+  const oldTags = [...note.tags];
   note.story = document.getElementById("modalStoryName").value;
   note.chapter = document.getElementById("modalChapterName").value;
   note.text = document.getElementById("modalNoteText").value;
   note.tags = document.getElementById("modalNoteTags").value.split(",").map(t => t.trim()).filter(Boolean);
+
+  // Sync this note to all tagged characters
+  // For each tag (character name), find that character and update their version of this note
+  note.tags.forEach(tagName => {
+    const taggedChar = db.characters.find(ch => ch.name === tagName);
+    if (taggedChar) {
+      const taggedNote = taggedChar.notes.find(n => n.id === note.id);
+      if (taggedNote) {
+        // Update the note for the tagged character
+        taggedNote.story = note.story;
+        taggedNote.chapter = note.chapter;
+        taggedNote.text = note.text;
+        taggedNote.tags = note.tags;
+      }
+    }
+  });
+  
+  // Also remove this note from characters that were previously tagged but no longer are
+  oldTags.forEach(oldTag => {
+    if (!note.tags.includes(oldTag)) {
+      const untaggedChar = db.characters.find(ch => ch.name === oldTag);
+      if (untaggedChar) {
+        const untaggedNote = untaggedChar.notes.find(n => n.id === note.id);
+        if (untaggedNote) {
+          // Remove this note from the untagged character
+          untaggedChar.notes = untaggedChar.notes.filter(n => n.id !== note.id);
+        }
+      }
+    }
+  });
 
   save();
   closeNoteModal();
@@ -3747,7 +3778,14 @@ function renderRelationshipNotes() {
   }
   
   const query = relationshipSearch.value.toLowerCase();
-  const sharedNotes = c.notes.filter(note => {
+  
+  // Get selected character names
+  const selectedNames = selectedRelationships.map(id => 
+    db.characters.find(x => x.id === id)?.name
+  ).filter(Boolean);
+  
+  // 1. Notes from current character that mention selected characters
+  const ownNotes = c.notes.filter(note => {
     const hasAllSelected = selectedRelationships.every(charId => {
       const char = db.characters.find(x => x.id === charId);
       return note.tags.includes(char.name);
@@ -3759,20 +3797,67 @@ function renderRelationshipNotes() {
            note.story.toLowerCase().includes(query);
   });
   
-  if (sharedNotes.length === 0) {
+  // 2. Notes from OTHER characters that mention current character AND selected characters
+  const otherNotes = [];
+  db.characters.forEach(otherChar => {
+    if (otherChar.id === c.id) return; // Skip self
+    if (selectedRelationships.includes(otherChar.id)) return; // Skip if they're in the selection
+    
+    otherChar.notes.forEach(note => {
+      // Must mention current character
+      if (!note.tags.includes(c.name)) return;
+      
+      // Must mention all selected characters
+      const hasAllSelected = selectedRelationships.every(charId => {
+        const char = db.characters.find(x => x.id === charId);
+        return note.tags.includes(char.name);
+      });
+      if (!hasAllSelected) return;
+      
+      // Apply search filter
+      if (query && !note.text.toLowerCase().includes(query) && 
+          !note.story.toLowerCase().includes(query)) return;
+      
+      otherNotes.push({
+        ...note,
+        fromCharacter: otherChar.name,
+        fromCharacterId: otherChar.id
+      });
+    });
+  });
+  
+  const allNotes = [...ownNotes, ...otherNotes];
+  
+  if (allNotes.length === 0) {
     relationshipNotes.innerHTML = "<p style='color: #999; padding: 20px; text-align: center;'>No shared interactions found</p>";
     return;
   }
   
-  relationshipNotes.innerHTML = `<strong>Shared Interactions (${sharedNotes.length}):</strong>`;
-  sharedNotes.forEach(note => {
+  relationshipNotes.innerHTML = `<strong>Shared Interactions (${allNotes.length}):</strong>`;
+  allNotes.forEach(note => {
     const div = document.createElement("div");
     div.className = "note";
     div.style.marginTop = "12px";
     div.style.cursor = "pointer";
-    div.onclick = () => openNoteModal(note.id);
+    const noteFromOther = note.fromCharacter;
+    const sourceText = noteFromOther ? ` <span style="font-size: 11px; color: #999;">(from ${noteFromOther})</span>` : '';
+    
+    div.onclick = () => {
+      if (noteFromOther) {
+        // Switch to other character's view
+        const otherChar = db.characters.find(ch => ch.id === note.fromCharacterId);
+        if (otherChar) {
+          selectCharacter(otherChar.id);
+          // Find and open the note
+          setTimeout(() => openNoteModal(note.id), 100);
+        }
+      } else {
+        openNoteModal(note.id);
+      }
+    };
+    
     div.innerHTML = `
-      <strong>${note.story} — ${note.chapter}</strong>
+      <strong>${note.story} — ${note.chapter}${sourceText}</strong>
       <div>${note.text}</div>
       ${note.tags.length ? `<div class="note-tags">${note.tags.map(t => `<span class="note-tag">${t}</span>`).join("")}</div>` : ""}
     `;
