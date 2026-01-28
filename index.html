@@ -25,6 +25,23 @@
       padding: 24px;
       overflow-y: auto;
       max-height: 100vh;
+      position: relative;
+    }
+
+    .panel-resize-handle {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 6px;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(215, 90, 143, .1));
+      cursor: col-resize;
+      transition: background .15s;
+      z-index: 10;
+    }
+    
+    .panel-resize-handle:hover {
+      background: linear-gradient(90deg, transparent, rgba(215, 90, 143, .3));
     }
 
     #characterList {
@@ -412,16 +429,31 @@
       left: 0;
       bottom: 0;
       width: 300px;
-      max-height: 400px;
+      height: 400px;
       background: #fff5f0;
       border-top: 1.5px solid #ffe0d0;
       border-right: 1.5px solid #ffe0d0;
       padding: 16px;
+      padding-top: 22px;
       overflow-y: auto;
       z-index: 100;
       display: none;
     }
     .metadata-sidebar.open { display: block; }
+    .metadata-sidebar-resize-handle {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(135deg, rgba(215, 90, 143, .3), rgba(215, 90, 143, .1));
+      cursor: ns-resize;
+      border-bottom: 1px solid rgba(215, 90, 143, .2);
+      transition: background .15s;
+    }
+    .metadata-sidebar-resize-handle:hover {
+      background: linear-gradient(135deg, rgba(215, 90, 143, .5), rgba(215, 90, 143, .3));
+    }
     .metadata-sidebar h4 { margin: 12px 0 8px 0; font-size: 13px; color: #d75a8f; }
     .metadata-sidebar-item { font-size: 12px; margin: 4px 0; }
     .metadata-sidebar-item input { font-size: 12px; padding: 6px; width: 100%; margin: 4px 0; border: 1px solid #ffe0d0; border-radius: 4px; }
@@ -501,6 +533,17 @@
   <!-- CHARACTERS -->
   <div class="panel">
     <h2>Characters</h2>
+    
+    <!-- Character Folders Management -->
+    <div style="margin-bottom: 16px; padding: 12px; background: rgba(215, 90, 143, .06); border-radius: 8px; border: 1.5px solid rgba(215, 90, 143, .15);">
+      <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #d75a8f;">Character Folders</h4>
+      <div id="characterFoldersManager" style="margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px;"></div>
+      <div style="display: flex; gap: 6px;">
+        <input id="newCharFolderName" type="text" placeholder="New folder name..." style="flex: 1; font-size: 13px; padding: 6px 8px;" />
+        <button id="addCharFolder" style="width: auto; padding: 6px 10px; font-size: 12px; margin: 0;">+ Add</button>
+      </div>
+    </div>
+    
     <div id="characterList"></div>
     <button id="addCharacter">+ New Character</button>
   </div>
@@ -625,6 +668,7 @@
     <button onclick="saveData()" style="background: rgba(76, 175, 140, .2); border: 1.5px solid rgba(76, 175, 140, .4); color: #4cb58c; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">💾 Save Data</button>
     <button onclick="loadData()" style="background: rgba(125, 211, 252, .2); border: 1.5px solid rgba(125, 211, 252, .4); color: #4fa2ff; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📂 Load Data</button>
     <button onclick="toggleMetadata()" style="background: rgba(180, 140, 255, .2); border: 1.5px solid rgba(180, 140, 255, .4); color: #b48cff; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📋 Metadata</button>
+    <button onclick="resetLayout()" style="background: rgba(255, 150, 100, .2); border: 1.5px solid rgba(255, 150, 100, .4); color: #ff9664; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">↺ Reset Layout</button>
   </div>
 
   <!-- PROJECT MENU BACKDROP -->
@@ -698,6 +742,7 @@
 
   <!-- METADATA SIDEBAR -->
   <div class="metadata-sidebar" id="metadataSidebar">
+    <div class="metadata-sidebar-resize-handle" id="metadataResizeHandle"></div>
     <h4>Character Info</h4>
     <div class="metadata-sidebar-item">
       <label style="font-size: 11px; color: #999; display: block; margin-bottom: 2px;">Age</label>
@@ -1040,12 +1085,19 @@
 
   <script>
 const STORAGE = "ecology_v3";
-let db = JSON.parse(localStorage.getItem(STORAGE)) || { characters: [], dorms: [], units: [], others: [] };
+let db = JSON.parse(localStorage.getItem(STORAGE)) || { characters: [], dorms: [], units: [], others: [], characterFolders: [] };
 
-// Ensure dorms, units, and others arrays exist (for old data)
+// Ensure dorms, units, others, and characterFolders arrays exist (for old data)
 if (!db.dorms) db.dorms = [];
 if (!db.units) db.units = [];
 if (!db.others) db.others = [];
+if (!db.characterFolders) db.characterFolders = ["Unsorted"];
+
+// Migrate existing characters to have folder and order properties
+db.characters.forEach((char, idx) => {
+  if (char.folder === undefined) char.folder = "Unsorted";
+  if (char.order === undefined) char.order = idx;
+});
 
 let activeChar = null;
 let currentDormId = null;
@@ -1168,6 +1220,142 @@ function loadData() {
 function toggleMetadata() {
   const sidebar = document.getElementById('metadataSidebar');
   sidebar.classList.toggle('open');
+}
+
+/* ---------- METADATA SIDEBAR RESIZING ---------- */
+let isResizingMetadata = false;
+const metadataResizeHandle = document.getElementById('metadataResizeHandle');
+const metadataSidebar = document.getElementById('metadataSidebar');
+
+if (metadataResizeHandle) {
+  metadataResizeHandle.addEventListener('mousedown', (e) => {
+    isResizingMetadata = true;
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isResizingMetadata) return;
+    
+    const newHeight = window.innerHeight - e.clientY;
+    if (newHeight >= 150 && newHeight <= 800) {
+      metadataSidebar.style.height = newHeight + 'px';
+      localStorage.setItem('metadataSidebarHeight', newHeight);
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    isResizingMetadata = false;
+  });
+  
+  // Restore saved height on load
+  const savedHeight = localStorage.getItem('metadataSidebarHeight');
+  if (savedHeight) {
+    metadataSidebar.style.height = savedHeight + 'px';
+  }
+}
+
+/* ---------- PANEL RESIZING ---------- */
+let currentResizingPanel = null;
+let resizeStartX = 0;
+let resizeStartWidth = 0;
+
+function updateGridLayout() {
+  const panels = document.querySelectorAll('body > .panel');
+  const widths = Array.from(panels).map(p => {
+    const width = p.style.width || (p.offsetWidth + 'px');
+    return width;
+  }).join(' ');
+  
+  if (widths) {
+    document.body.style.gridTemplateColumns = widths;
+    localStorage.setItem('gridTemplateColumns', widths);
+  }
+}
+
+function resetLayout() {
+  if (!confirm('Reset all panel sizes to default?')) return;
+  
+  // Clear all saved widths
+  localStorage.removeItem('gridTemplateColumns');
+  document.querySelectorAll('.panel').forEach((panel, idx) => {
+    const panelId = panel.id || 'panel-' + idx;
+    localStorage.removeItem('panelWidth-' + panelId);
+    panel.style.width = '';
+  });
+  
+  // Reset grid to default
+  document.body.style.gridTemplateColumns = '300px 1fr 1fr';
+  
+  // Reinitialize
+  location.reload();
+}
+
+function initializePanelResize() {
+  // Get all panels and add resize handles
+  const panels = document.querySelectorAll('.panel');
+  
+  panels.forEach((panel, idx) => {
+    // Skip expanded panels and metadata sidebar
+    if (panel.id === 'metadataSidebar' || panel.classList.contains('expanded')) return;
+    
+    // Create resize handle
+    const handle = document.createElement('div');
+    handle.className = 'panel-resize-handle';
+    panel.appendChild(handle);
+    
+    // Add resize listeners
+    handle.addEventListener('mousedown', (e) => {
+      currentResizingPanel = panel;
+      resizeStartX = e.clientX;
+      resizeStartWidth = panel.offsetWidth;
+      e.preventDefault();
+    });
+  });
+  
+  // Global mouse move listener for resizing
+  document.addEventListener('mousemove', (e) => {
+    if (!currentResizingPanel) return;
+    
+    const diff = e.clientX - resizeStartX;
+    const newWidth = resizeStartWidth + diff;
+    
+    // Set minimum and maximum widths
+    if (newWidth >= 200 && newWidth <= 800) {
+      currentResizingPanel.style.width = newWidth + 'px';
+      
+      // Update grid layout in real-time
+      updateGridLayout();
+      
+      // Save panel width to localStorage
+      const panelId = currentResizingPanel.id || 'panel-' + Array.from(document.querySelectorAll('.panel')).indexOf(currentResizingPanel);
+      localStorage.setItem('panelWidth-' + panelId, newWidth);
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    currentResizingPanel = null;
+  });
+  
+  // Restore saved widths and grid layout
+  const savedGridLayout = localStorage.getItem('gridTemplateColumns');
+  if (savedGridLayout) {
+    document.body.style.gridTemplateColumns = savedGridLayout;
+  }
+  
+  panels.forEach((panel, idx) => {
+    const panelId = panel.id || 'panel-' + idx;
+    const savedWidth = localStorage.getItem('panelWidth-' + panelId);
+    if (savedWidth && !panel.classList.contains('expanded')) {
+      panel.style.width = savedWidth + 'px';
+    }
+  });
+}
+
+// Initialize panel resizing when document is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializePanelResize);
+} else {
+  initializePanelResize();
 }
 
 function updateMetadataFields() {
@@ -2328,17 +2516,204 @@ const noteModal = document.getElementById("noteModal");
 const imageLightbox = document.getElementById("imageLightbox");
 
 /* ---------- CHARACTER LIST ---------- */
+function renderCharacterFoldersManager() {
+  const manager = document.getElementById("characterFoldersManager");
+  manager.innerHTML = "";
+  
+  db.characterFolders.forEach((folderName, idx) => {
+    const span = document.createElement("span");
+    span.style.cssText = "display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: rgba(215, 90, 143, .15); border: 1px solid rgba(215, 90, 143, .25); border-radius: 4px; font-size: 12px;";
+    
+    const nameEl = document.createElement("span");
+    nameEl.textContent = folderName;
+    span.appendChild(nameEl);
+    
+    if (folderName !== 'Unsorted') {
+      const deleteBtn = document.createElement("span");
+      deleteBtn.textContent = "✕";
+      deleteBtn.style.cssText = "cursor: pointer; font-weight: bold; margin-left: 2px;";
+      deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        deleteCharacterFolder(folderName);
+      };
+      span.appendChild(deleteBtn);
+    }
+    
+    manager.appendChild(span);
+  });
+}
+
 function renderCharacters() {
   initializeDefaults();
   characterList.innerHTML = "";
-  db.characters.forEach(c => {
-    const div = document.createElement("div");
-    div.className = "item" + (c.id === activeChar ? " active" : "");
-    div.textContent = c.name;
-    div.onclick = () => selectCharacter(c.id);
-    characterList.appendChild(div);
+  renderCharacterFoldersManager();
+  
+  // Group characters by folder
+  const grouped = {};
+  db.characterFolders.forEach(folder => {
+    grouped[folder] = [];
   });
+  
+  db.characters.forEach(c => {
+    const folder = c.folder || "Unsorted";
+    if (!grouped[folder]) grouped[folder] = [];
+    grouped[folder].push(c);
+  });
+  
+  // Sort characters within each folder by order
+  Object.keys(grouped).forEach(folder => {
+    grouped[folder].sort((a, b) => (a.order || 0) - (b.order || 0));
+  });
+  
+  // Render folders with characters
+  db.characterFolders.forEach(folderName => {
+    const characters = grouped[folderName] || [];
+    
+    const folderEl = document.createElement("div");
+    folderEl.className = "folder";
+    folderEl.dataset.folder = folderName;
+    
+    const header = document.createElement("h4");
+    header.style.cssText = "margin: 12px 0 8px 0; font-size: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;";
+    header.textContent = `${folderName} (${characters.length})`;
+    header.onclick = () => folderEl.classList.toggle("collapsed");
+    
+    // Add drag-over and drop handlers to header
+    header.ondragover = (e) => e.preventDefault();
+    header.ondrop = (e) => {
+      e.preventDefault();
+      const draggedCharId = e.dataTransfer.getData("charId");
+      moveCharacterToFolder(draggedCharId, folderName);
+    };
+    
+    folderEl.appendChild(header);
+    
+    const charList = document.createElement("div");
+    charList.className = "folder-notes";
+    charList.style.cssText = "display: flex; flex-direction: column; gap: 6px;";
+    
+    // Add drag-over and drop handlers to folder container
+    charList.ondragover = (e) => e.preventDefault();
+    charList.ondrop = (e) => {
+      e.preventDefault();
+      const draggedCharId = e.dataTransfer.getData("charId");
+      moveCharacterToFolder(draggedCharId, folderName);
+    };
+    
+    characters.forEach((c, idx) => {
+      const div = document.createElement("div");
+      div.className = "item" + (c.id === activeChar ? " active" : "");
+      div.textContent = c.name;
+      div.draggable = true;
+      div.dataset.charId = c.id;
+      div.dataset.folder = folderName;
+      div.dataset.order = idx;
+      
+      div.ondragstart = (e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("charId", c.id);
+        e.dataTransfer.setData("fromFolder", folderName);
+      };
+      
+      div.ondragover = (e) => e.preventDefault();
+      
+      div.ondrop = (e) => {
+        e.preventDefault();
+        const draggedCharId = e.dataTransfer.getData("charId");
+        const fromFolder = e.dataTransfer.getData("fromFolder");
+        if (draggedCharId !== c.id) {
+          reorderCharacters(draggedCharId, c.id, folderName);
+        }
+      };
+      
+      div.onclick = () => selectCharacter(c.id);
+      charList.appendChild(div);
+    });
+    
+    if (characters.length === 0) {
+      const emptyMsg = document.createElement("div");
+      emptyMsg.style.cssText = "font-size: 12px; color: #999; padding: 8px; text-align: center;";
+      emptyMsg.textContent = "No characters in this folder";
+      emptyMsg.ondragover = (e) => e.preventDefault();
+      emptyMsg.ondrop = (e) => {
+        e.preventDefault();
+        const draggedCharId = e.dataTransfer.getData("charId");
+        moveCharacterToFolder(draggedCharId, folderName);
+      };
+      charList.appendChild(emptyMsg);
+    }
+    
+    folderEl.appendChild(charList);
+    characterList.appendChild(folderEl);
+  });
+  
   updateCharacterTagsList();
+}
+
+function createCharacterFolder() {
+  const name = document.getElementById("newCharFolderName").value.trim();
+  if (!name) {
+    alert("Please enter a folder name");
+    return;
+  }
+  
+  if (db.characterFolders.includes(name)) {
+    alert("Folder already exists");
+    return;
+  }
+  
+  db.characterFolders.push(name);
+  document.getElementById("newCharFolderName").value = "";
+  save();
+  renderCharacters();
+}
+
+function deleteCharacterFolder(folderName) {
+  if (folderName === "Unsorted") {
+    alert("Cannot delete the Unsorted folder");
+    return;
+  }
+  
+  const charsInFolder = db.characters.filter(c => c.folder === folderName);
+  if (charsInFolder.length > 0) {
+    if (!confirm(`Move ${charsInFolder.length} character(s) to Unsorted before deleting this folder?`)) {
+      return;
+    }
+    charsInFolder.forEach(c => c.folder = "Unsorted");
+  }
+  
+  db.characterFolders = db.characterFolders.filter(f => f !== folderName);
+  save();
+  renderCharacters();
+}
+
+function moveCharacterToFolder(charId, newFolder) {
+  const char = db.characters.find(c => c.id === charId);
+  if (char) {
+    char.folder = newFolder;
+    save();
+    renderCharacters();
+  }
+}
+
+function reorderCharacters(draggedCharId, targetCharId, folder) {
+  const draggedChar = db.characters.find(c => c.id === draggedCharId);
+  const targetChar = db.characters.find(c => c.id === targetCharId);
+  
+  if (!draggedChar || !targetChar) return;
+  
+  // Move to target folder if different
+  if (draggedChar.folder !== folder) {
+    draggedChar.folder = folder;
+  }
+  
+  // Swap order
+  const temp = draggedChar.order;
+  draggedChar.order = targetChar.order;
+  targetChar.order = temp;
+  
+  save();
+  renderCharacters();
 }
 
 function selectCharacter(id) {
@@ -2367,6 +2742,8 @@ addCharacter.onclick = () => {
     name: "New Character",
     role: "",
     desc: "",
+    folder: "Unsorted",
+    order: db.characters.length,
     folders: ["Unsorted"],
     notes: [],
     messages: []
@@ -2377,6 +2754,8 @@ addCharacter.onclick = () => {
   renderCharacters();
   selectCharacter(c.id);
 };
+
+document.getElementById("addCharFolder").onclick = createCharacterFolder;
 
 document.getElementById("deleteCharacter").onclick = () => {
   const c = current();
