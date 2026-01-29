@@ -671,6 +671,31 @@
     .unit-member:hover { border-color: rgba(215, 90, 143, .6); background: #fffbf9; }
     .unit-member-name { font-size: 13px; font-weight: 600; color: #d75a8f; margin-top: 6px; text-align: center; }
 
+    /* TOAST NOTIFICATION */
+    .toast {
+      background: rgba(215, 90, 143, .9);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,.15);
+      animation: toastSlideIn 0.3s ease-out;
+      max-width: 300px;
+      word-wrap: break-word;
+    }
+
+    @keyframes toastSlideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
   </style>
 
   <style>
@@ -1177,8 +1202,26 @@
     <div class="metadata-sidebar-item">
       <label style="font-size: 11px; color: #999; display: block; margin-bottom: 6px; font-weight: 600;">My Dorms</label>
       <div id="myDormsList" style="font-size: 11px; margin-bottom: 6px;"></div>
-      <button onclick="openDormCreationModal()" style="width: 100%; padding: 6px; background: rgba(100, 180, 155, .2); border: 1px solid rgba(100, 180, 155, .4); color: #4cb58c; border-radius: 4px; cursor: pointer; font-weight: 600;">+ Add Dorm</button>
+      <button onclick="toggleDormCreationForm()" style="width: 100%; padding: 6px; background: rgba(100, 180, 155, .2); border: 1px solid rgba(100, 180, 155, .4); color: #4cb58c; border-radius: 4px; cursor: pointer; font-weight: 600;">+ Add Dorm</button>
       <button onclick="openDormSearchPanel()" style="width: 100%; padding: 6px; margin-top: 4px; background: rgba(180, 140, 255, .2); border: 1px solid rgba(180, 140, 255, .4); color: #b48cff; border-radius: 4px; cursor: pointer; font-size: 11px;">🔍 All Dorms</button>
+      <div id="dormCreationForm" style="display: none; margin-top: 8px; padding: 8px; background: rgba(100, 180, 155, .1); border-radius: 4px; border: 1px solid rgba(100, 180, 155, .3);">
+        <div style="margin-bottom: 6px;">
+          <label style="font-size: 10px; color: #999; display: block; margin-bottom: 2px;">Dorm Name</label>
+          <input id="dormNameInputInline" type="text" placeholder="e.g., East Wing Room 204" style="width: 100%; padding: 4px; border: 1px solid #ffe0d0; border-radius: 3px; font-size: 11px;" />
+        </div>
+        <div style="margin-bottom: 6px;">
+          <label style="font-size: 10px; color: #999; display: block; margin-bottom: 2px;">Members (select up to 4)</label>
+          <div id="dormMembersSelectorInline" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px;"></div>
+          <input id="dormMemberSearchInline" type="text" placeholder="Search characters..." style="width: 100%; padding: 4px; border: 1px solid #ffe0d0; border-radius: 3px; font-size: 11px; margin-bottom: 4px;" />
+          <div id="dormMemberSuggestionsInline" style="max-height: 80px; overflow-y: auto;"></div>
+        </div>
+        <div style="margin-bottom: 6px;">
+          <label style="font-size: 10px; color: #999; display: block; margin-bottom: 2px;">Description</label>
+          <textarea id="dormDescInputInline" placeholder="Things to do, layout, atmosphere..." style="width: 100%; min-height: 60px; padding: 4px; border: 1px solid #ffe0d0; border-radius: 3px; font-size: 11px; font-family: inherit;"></textarea>
+        </div>
+        <div id="dormCreationMessage" style="font-size: 10px; color: green; margin-bottom: 4px; display: none;"></div>
+        <button onclick="saveDormCreationInline()" style="width: 100%; padding: 6px; background: rgba(100, 180, 155, .3); border: 1px solid rgba(100, 180, 155, .5); color: #4cb58c; border-radius: 3px; font-weight: 600; cursor: pointer; font-size: 11px;">Save Dorm</button>
+      </div>
     </div>
     <div class="metadata-sidebar-item">
       <label style="font-size: 11px; color: #999; display: block; margin-bottom: 2px;">Birthday</label>
@@ -1463,6 +1506,22 @@
     </div>
   </div>
 
+  <!-- DORM DELETE CONFIRMATION MODAL -->
+  <div id="dormDeleteModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeDormDeleteModal()">&times;</span>
+      <h2>Delete Dorm</h2>
+      <p>Are you sure you want to delete this dorm? This action cannot be undone.</p>
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button id="confirmDeleteDorm" style="flex: 1;">Delete</button>
+        <button onclick="closeDormDeleteModal()" style="flex: 1;">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 10000;"></div>
+
   <!-- NOTE MODAL -->
   <div id="noteModal" class="modal">
     <div class="modal-content">
@@ -1651,7 +1710,7 @@ function newProject() {
   document.getElementById('searchResults').innerHTML = '';
   
   closeProjectMenu();
-  alert('New project started! Begin creating your characters.');
+  showToast('New project started! Begin creating your characters.');
 }
 
 function exportAllData() {
@@ -1664,7 +1723,7 @@ function exportAllData() {
   link.click();
   URL.revokeObjectURL(url);
   closeProjectMenu();
-  alert('Project exported successfully!');
+  showToast('Project exported successfully!');
 }
 
 function saveData() {
@@ -1700,10 +1759,10 @@ function loadData() {
             selectCharacter(db.characters[0].id);
           }
           closeProjectMenu();
-          alert('Data loaded successfully!');
+          showToast('Data loaded successfully!');
         }
       } catch (err) {
-        alert('Error loading file: ' + err.message);
+        showToast('Error loading file: ' + err.message);
       }
     };
     reader.readAsText(file);
@@ -2158,7 +2217,7 @@ function updateDormMemberSuggestions() {
 
 function addDormMember(memberId, memberName) {
   if (selectedDormMembers.length >= 4) {
-    alert('Maximum 4 members per dorm');
+    showToast('Maximum 4 members per dorm');
     return;
   }
   selectedDormMembers.push(memberId);
@@ -2214,12 +2273,12 @@ function saveDormCreation() {
   const desc = document.getElementById('dormDescInput').value.trim();
   
   if (!name) {
-    alert('Please enter a dorm name');
+    showToast('Please enter a dorm name');
     return;
   }
   
   if (selectedDormMembers.length === 0) {
-    alert('Please select at least one member');
+    showToast('Please select at least one member');
     return;
   }
   
@@ -2236,8 +2295,8 @@ function saveDormCreation() {
   closeDormCreationModal();
   updateMetadataFields();
   renderAllDormsInSearch();
-  
-  alert('Dorm "' + name + '" has been created!');
+
+  showToast('Dorm "' + name + '" has been created!');
 }
 
 document.getElementById('dormMemberSearch')?.addEventListener('input', updateDormMemberSuggestions);
@@ -2388,7 +2447,7 @@ function updateDormDetailMemberSuggestions() {
 
 function addDormDetailMember(memberId, memberName) {
   if (selectedDormMembers.length >= 4) {
-    alert('Maximum 4 members per dorm');
+    showToast('Maximum 4 members per dorm');
     return;
   }
   selectedDormMembers.push(memberId);
@@ -2444,12 +2503,12 @@ function saveDormDetail() {
   const desc = document.getElementById('dormDetailDescInput').value.trim();
   
   if (!name) {
-    alert('Please enter a dorm name');
+    showToast('Please enter a dorm name');
     return;
   }
   
   if (selectedDormMembers.length === 0) {
-    alert('Please select at least one member');
+    showToast('Please select at least one member');
     return;
   }
   
@@ -2466,22 +2525,153 @@ function saveDormDetail() {
   updateMetadataFields();
   renderAllDormsInSearch();
   
-  alert('Dorm updated!');
+  showToast('Dorm updated successfully!');
 }
 
 function deleteDorm() {
-  if (!confirm('Delete this dorm? This cannot be undone.')) return;
-  
   db.dorms = db.dorms.filter(d => d.id !== currentEditingDormId);
   save();
   closeDormDetail();
   updateMetadataFields();
   renderAllDormsInSearch();
-  
-  alert('Dorm deleted!');
+  showToast('Dorm deleted successfully!');
+}
+
+
+
+document.getElementById('confirmDeleteDorm').onclick = () => {
+  db.dorms = db.dorms.filter(d => d.id !== currentEditingDormId);
+  save();
+  closeDormDetail();
+  updateMetadataFields();
+  renderAllDormsInSearch();
+  closeDormDeleteModal();
+  showToast('Dorm deleted successfully!');
+};
+
+function showToast(message) {
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  document.getElementById('toastContainer').appendChild(toast);
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
 }
 
 document.getElementById('dormDetailMemberSearch')?.addEventListener('input', updateDormDetailMemberSuggestions);
+
+// Inline dorm creation functions
+function toggleDormCreationForm() {
+  const form = document.getElementById('dormCreationForm');
+  if (form.style.display === 'none') {
+    form.style.display = 'block';
+    // Reset form
+    document.getElementById('dormNameInputInline').value = '';
+    document.getElementById('dormDescInputInline').value = '';
+    document.getElementById('dormMembersSelectorInline').innerHTML = '';
+    document.getElementById('dormMemberSearchInline').value = '';
+    document.getElementById('dormMemberSuggestionsInline').innerHTML = '';
+    document.getElementById('dormCreationMessage').style.display = 'none';
+    selectedDormMembers = [];
+  } else {
+    form.style.display = 'none';
+  }
+}
+
+function updateDormMemberSuggestionsInline() {
+  const search = document.getElementById('dormMemberSearchInline').value.toLowerCase();
+  const suggestions = document.getElementById('dormMemberSuggestionsInline');
+
+  const available = db.characters.filter(ch =>
+    !selectedDormMembers.includes(ch.id) &&
+    ch.name.toLowerCase().includes(search)
+  );
+
+  suggestions.innerHTML = available.map(ch => `
+    <div style="padding: 6px 8px; background: #f9f9f9; border-radius: 4px; margin-bottom: 4px; cursor: pointer; font-size: 11px;" onclick="addDormMemberInline('${ch.id}', '${ch.name}')">
+      ${ch.name}
+    </div>
+  `).join('');
+}
+
+function addDormMemberInline(memberId, memberName) {
+  if (selectedDormMembers.length >= 4) {
+    document.getElementById('dormCreationMessage').textContent = 'Maximum 4 members per dorm';
+    document.getElementById('dormCreationMessage').style.display = 'block';
+    document.getElementById('dormCreationMessage').style.color = 'red';
+    return;
+  }
+  selectedDormMembers.push(memberId);
+
+  const selector = document.getElementById('dormMembersSelectorInline');
+  const tag = document.createElement('div');
+  tag.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: rgba(100, 180, 155, .2); border: 1px solid rgba(100, 180, 155, .4); border-radius: 4px; font-size: 11px;';
+  tag.innerHTML = `${memberName} <span style="cursor: pointer; font-weight: bold;" onclick="removeDormMemberInline('${memberId}')">✕</span>`;
+  selector.appendChild(tag);
+
+  document.getElementById('dormMemberSearchInline').value = '';
+  updateDormMemberSuggestionsInline();
+}
+
+function removeDormMemberInline(memberId) {
+  selectedDormMembers = selectedDormMembers.filter(id => id !== memberId);
+  updateDormMemberSuggestionsInline();
+
+  const selector = document.getElementById('dormMembersSelectorInline');
+  selector.innerHTML = '';
+  selectedDormMembers.forEach(id => {
+    const ch = db.characters.find(c => c.id === id);
+    if (!ch) return;
+    const tag = document.createElement('div');
+    tag.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: rgba(100, 180, 155, .2); border: 1px solid rgba(100, 180, 155, .4); border-radius: 4px; font-size: 11px;';
+    tag.innerHTML = `${ch.name} <span style="cursor: pointer; font-weight: bold;" onclick="removeDormMemberInline('${id}')">✕</span>`;
+    selector.appendChild(tag);
+  });
+}
+
+function saveDormCreationInline() {
+  const name = document.getElementById('dormNameInputInline').value.trim();
+  const desc = document.getElementById('dormDescInputInline').value.trim();
+
+  if (!name) {
+    document.getElementById('dormCreationMessage').textContent = 'Please enter a dorm name';
+    document.getElementById('dormCreationMessage').style.display = 'block';
+    document.getElementById('dormCreationMessage').style.color = 'red';
+    return;
+  }
+
+  if (selectedDormMembers.length === 0) {
+    document.getElementById('dormCreationMessage').textContent = 'Please select at least one member';
+    document.getElementById('dormCreationMessage').style.display = 'block';
+    document.getElementById('dormCreationMessage').style.color = 'red';
+    return;
+  }
+
+  const newDorm = {
+    id: uid(),
+    name: name,
+    memberIds: [...selectedDormMembers],
+    description: desc,
+    image: ''
+  };
+
+  db.dorms.push(newDorm);
+  save();
+  updateMetadataFields();
+  renderAllDormsInSearch();
+
+  document.getElementById('dormCreationMessage').textContent = 'Dorm "' + name + '" has been created!';
+  document.getElementById('dormCreationMessage').style.display = 'block';
+  document.getElementById('dormCreationMessage').style.color = 'green';
+
+  // Hide form after 2 seconds
+  setTimeout(() => {
+    toggleDormCreationForm();
+  }, 2000);
+}
+
+document.getElementById('dormMemberSearchInline')?.addEventListener('input', updateDormMemberSuggestionsInline);
 
 /* ---------- UNIT FUNCTIONS ---------- */
 let currentEditingUnitId = null;
@@ -2551,7 +2741,7 @@ function updateUnitMemberDisplay() {
 function saveUnitCreation() {
   const name = document.getElementById('unitNameInput').value.trim();
   if (!name || selectedUnitMembers.length === 0) {
-    alert('Unit name and at least one member required');
+    showToast('Unit name and at least one member required');
     return;
   }
   
@@ -2570,7 +2760,7 @@ function saveUnitCreation() {
   closeUnitCreationModal();
   updateMetadataFields();
   renderAllUnitsInSearch();
-  alert('Unit created!');
+  showToast('Unit created!');
 }
 
 function deleteUnitCreationImage() {
@@ -2714,10 +2904,10 @@ function removeUnitDetailMember(charId) {
 function saveUnitDetail() {
   const unit = (db.units || []).find(u => u.id === currentEditingUnitId);
   if (!unit) return;
-  
+
   const name = document.getElementById('unitDetailNameInput').value.trim();
   if (!name || selectedUnitMembers.length === 0) {
-    alert('Unit name and at least one member required');
+    showToast('Unit name and at least one member required');
     return;
   }
   
@@ -2729,18 +2919,18 @@ function saveUnitDetail() {
   closeUnitDetail();
   updateMetadataFields();
   renderAllUnitsInSearch();
-  alert('Unit updated!');
+  showToast('Unit updated!');
 }
 
 function deleteUnit() {
   if (!confirm('Delete this unit? This cannot be undone.')) return;
-  
+
   db.units = (db.units || []).filter(u => u.id !== currentEditingUnitId);
   save();
   closeUnitDetail();
   updateMetadataFields();
   renderAllUnitsInSearch();
-  alert('Unit deleted!');
+  showToast('Unit deleted!');
 }
 
 function deleteUnitDetailImage() {
@@ -2868,7 +3058,7 @@ function updateOtherMemberDisplay() {
 function saveOtherCreation() {
   const name = document.getElementById('otherNameInput').value.trim();
   if (!name || selectedOtherMembers.length === 0) {
-    alert('Other name and at least one member required');
+    showToast('Other name and at least one member required');
     return;
   }
   
@@ -2887,7 +3077,7 @@ function saveOtherCreation() {
   closeOtherCreationModal();
   updateMetadataFields();
   renderAllOthersInSearch();
-  alert('Other created!');
+  showToast('Other created!');
 }
 
 function deleteOtherCreationImage() {
@@ -3031,10 +3221,10 @@ function removeOtherDetailMember(charId) {
 function saveOtherDetail() {
   const other = (db.others || []).find(o => o.id === currentEditingOtherId);
   if (!other) return;
-  
+
   const name = document.getElementById('otherDetailNameInput').value.trim();
   if (!name || selectedOtherMembers.length === 0) {
-    alert('Other name and at least one member required');
+    showToast('Other name and at least one member required');
     return;
   }
   
@@ -3046,18 +3236,18 @@ function saveOtherDetail() {
   closeOtherDetail();
   updateMetadataFields();
   renderAllOthersInSearch();
-  alert('Other updated!');
+  showToast('Other updated!');
 }
 
 function deleteOther() {
   if (!confirm('Delete this other? This cannot be undone.')) return;
-  
+
   db.others = (db.others || []).filter(o => o.id !== currentEditingOtherId);
   save();
   closeOtherDetail();
   updateMetadataFields();
   renderAllOthersInSearch();
-  alert('Other deleted!');
+  showToast('Other deleted!');
 }
 
 function deleteOtherDetailImage() {
@@ -3661,13 +3851,13 @@ function createSubfolderInParent(parentPath, subfolderName) {
 function createCharacterFolder() {
   const name = document.getElementById("newCharFolderName").value.trim();
   if (!name) {
-    alert("Please enter a folder name");
+    showToast("Please enter a folder name");
     return;
   }
-  
+
   // Check if folder already exists
   if (db.characterFolders.some(f => f.name === name)) {
-    alert("Folder already exists");
+    showToast("Folder already exists");
     return;
   }
   
@@ -3680,7 +3870,7 @@ function createCharacterFolder() {
 
 function deleteCharacterFolder(path) {
   if (path === "Unsorted") {
-    alert("Cannot delete the Unsorted folder");
+    showToast("Cannot delete the Unsorted folder");
     return;
   }
 
@@ -3887,7 +4077,7 @@ function closeAddSubfolderModal() {
 document.getElementById('confirmAddSubfolder').onclick = () => {
   const subName = document.getElementById('subfolderNameInput').value.trim();
   if (!subName) {
-    alert('Please enter a subfolder name');
+    showToast('Please enter a subfolder name');
     return;
   }
 
@@ -5212,9 +5402,9 @@ function importBackup() {
           db = importedData;
           save();
           renderCharacters();
-          alert('Backup imported successfully!');
+          showToast('Backup imported successfully!');
         } catch (error) {
-          alert('Error importing backup: Invalid JSON file.');
+          showToast('Error importing backup: Invalid JSON file.');
         }
       };
       reader.readAsText(file);
