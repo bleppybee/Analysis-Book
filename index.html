@@ -1119,10 +1119,13 @@
     
     <div style="margin: 12px 0;">
       <label style="font-size: 14px; margin-bottom: 8px;">Add Family Member</label>
-      <div style="display: flex; gap: 6px;">
+      <div id="familyMessage" style="color: red; font-size: 12px; margin-bottom: 8px;"></div>
+      <div style="display: flex; gap: 6px; margin-bottom: 8px;">
         <input id="familyRelationType" type="text" placeholder="e.g., Mother, Brother" style="font-size: 12px; padding: 8px; flex: 1;" />
+        <input id="familyCharacterName" type="text" placeholder="Character name" style="font-size: 12px; padding: 8px; flex: 1;" />
         <button onclick="addFamilyMember()" style="padding: 8px 12px; width: auto; margin: 0; font-size: 12px;">+</button>
       </div>
+      <div id="familyCharacterSuggestions" style="max-height: 120px; overflow-y: auto;"></div>
     </div>
     
     <div id="familyMembersList" style="margin: 16px 0;"></div>
@@ -1141,8 +1144,8 @@
     <div id="appellationSection" style="display: none; margin: 16px 0; padding: 12px; background: rgba(180, 140, 255, .08); border-radius: 8px; border: 1.5px solid rgba(180, 140, 255, .15);">
       <label style="margin-bottom: 8px; font-size: 13px;">Appellations for <span id="appellationLabel"></span></label>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-        <input id="appellationFrom" type="text" placeholder="How they call each other" style="font-size: 12px; padding: 8px;" />
-        <input id="appellationTo" type="text" placeholder="Reverse appellation" style="font-size: 12px; padding: 8px;" />
+        <input id="appellationFrom" type="text" placeholder="Character nickname -> Tagged Character" style="font-size: 12px; padding: 8px;" />
+        <input id="appellationTo" type="text" placeholder="Tagged Character nickname -> Character" style="font-size: 12px; padding: 8px;" />
       </div>
     </div>
     
@@ -3114,6 +3117,8 @@ document.getElementById('otherDetailImageInput')?.addEventListener('change', (e)
 });
 document.getElementById('otherDetailMemberSearch')?.addEventListener('input', updateOtherDetailMemberSuggestions);
 
+document.getElementById('familyCharacterName').addEventListener('input', updateFamilyCharacterSuggestions);
+
 // Initialize with default characters if empty
 function initializeDefaults() {
   if (db.characters.length === 0) {
@@ -4610,40 +4615,80 @@ function addFamilyMember() {
   const c = current();
   if (!c) return;
   if (!c.family) c.family = {};
-  
+
   const relType = document.getElementById('familyRelationType').value.trim();
+  const charName = document.getElementById('familyCharacterName').value.trim();
+  const messageDiv = document.getElementById('familyMessage');
+
+  messageDiv.innerHTML = '';
+
   if (!relType) {
-    alert('Please enter a relationship type (e.g., Mother, Brother)');
+    messageDiv.innerHTML = 'Please enter a relationship type (e.g., Mother, Brother)';
     return;
   }
-  
-  // Get all other characters for selection
-  const others = db.characters.filter(ch => ch.id !== c.id);
-  if (others.length === 0) {
-    alert('Create other characters first');
+
+  if (!charName) {
+    messageDiv.innerHTML = 'Please enter a character name';
     return;
   }
-  
-  // Simple prompt to select character
-  const charNames = others.map(ch => ch.name).join(', ');
-  const selected = prompt(`Select a character (${charNames}):`);
-  if (!selected) return;
-  
-  const targetChar = db.characters.find(ch => ch.name.toLowerCase() === selected.toLowerCase());
+
+  // Find the target character
+  const targetChar = db.characters.find(ch => ch.name.toLowerCase() === charName.toLowerCase());
   if (!targetChar) {
-    alert('Character not found');
+    messageDiv.innerHTML = 'Character not found. Please select from the suggestions or ensure the character exists.';
     return;
   }
-  
+
+  if (targetChar.id === c.id) {
+    messageDiv.innerHTML = 'Cannot add yourself as a family member';
+    return;
+  }
+
   c.family[targetChar.id] = {
     type: relType,
     note: '',
     createdAt: new Date().toISOString()
   };
-  
+
   document.getElementById('familyRelationType').value = '';
+  document.getElementById('familyCharacterName').value = '';
+  document.getElementById('familyCharacterSuggestions').innerHTML = '';
+  messageDiv.innerHTML = '';
   save();
   renderFamilyMembers();
+}
+
+function updateFamilyCharacterSuggestions() {
+  const input = document.getElementById('familyCharacterName');
+  const suggestionsDiv = document.getElementById('familyCharacterSuggestions');
+  const query = input.value.toLowerCase().trim();
+
+  if (!query) {
+    suggestionsDiv.innerHTML = '';
+    return;
+  }
+
+  const c = current();
+  const availableChars = db.characters.filter(ch =>
+    ch.id !== (c ? c.id : null) &&
+    ch.name.toLowerCase().includes(query)
+  );
+
+  if (availableChars.length === 0) {
+    suggestionsDiv.innerHTML = '<div style="padding: 8px; color: #999; font-size: 12px;">No characters found</div>';
+    return;
+  }
+
+  suggestionsDiv.innerHTML = availableChars.map(ch => `
+    <div style="padding: 8px; cursor: pointer; border-radius: 4px; background: rgba(215, 90, 143, .08); margin-bottom: 2px; font-size: 12px;" onclick="selectFamilyCharacter('${ch.name}')">
+      ${ch.name}
+    </div>
+  `).join('');
+}
+
+function selectFamilyCharacter(name) {
+  document.getElementById('familyCharacterName').value = name;
+  document.getElementById('familyCharacterSuggestions').innerHTML = '';
 }
 
 function renderRelationshipSelectors() {
