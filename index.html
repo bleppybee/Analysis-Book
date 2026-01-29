@@ -1372,6 +1372,20 @@
     <img id="lightboxImage" src="" />
   </div>
 
+  <!-- CHARACTER DELETE MODAL -->
+  <div id="characterDeleteModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeCharacterDeleteModal()">&times;</span>
+      <h2>Delete Character</h2>
+      <p>WARNING! You are about to delete this character. To continue type 'delete' in all lowercase</p>
+      <input type="text" id="deleteConfirmInput" placeholder="Type 'delete' to confirm" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ffe0d0; border-radius: 4px;" />
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button id="confirmDeleteCharacter" style="flex: 1;">Delete</button>
+        <button onclick="closeCharacterDeleteModal()" style="flex: 1;">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <script>
 const STORAGE = "ecology_v3";
 let db = JSON.parse(localStorage.getItem(STORAGE)) || { characters: [], dorms: [], units: [], others: [], characterFolders: [] };
@@ -3544,11 +3558,30 @@ document.getElementById("charSearchInput").addEventListener("keypress", (e) => {
   }
 });
 
-document.getElementById("deleteCharacter").onclick = () => {
-  const c = current();
+let characterToDelete = null;
+
+function openCharacterDeleteModal(charId) {
+  const c = db.characters.find(ch => ch.id === charId);
   if (!c) return;
-  
-  if (!confirm(`Delete "${c.name}" and all their notes?\n\nThis action cannot be undone.`)) return;
+  characterToDelete = c;
+  document.getElementById('deleteConfirmInput').value = '';
+  document.getElementById('characterDeleteModal').classList.add('open');
+}
+
+function closeCharacterDeleteModal() {
+  document.getElementById('characterDeleteModal').classList.remove('open');
+  characterToDelete = null;
+}
+
+document.getElementById('confirmDeleteCharacter').onclick = () => {
+  const input = document.getElementById('deleteConfirmInput').value.trim();
+  if (input !== 'delete') {
+    alert('Please type "delete" in all lowercase to confirm.');
+    return;
+  }
+
+  const c = characterToDelete;
+  if (!c) return;
 
   // Remove character from dorms
   if (c.dormId) {
@@ -3560,7 +3593,7 @@ document.getElementById("deleteCharacter").onclick = () => {
       }
     }
   }
-  
+
   // Remove character from db
   db.characters = db.characters.filter(ch => ch.id !== c.id);
 
@@ -3583,6 +3616,7 @@ document.getElementById("deleteCharacter").onclick = () => {
   });
 
   save();
+  closeCharacterDeleteModal();
   activeChar = db.characters[0]?.id || null;
   renderCharacters();
   if (activeChar) {
@@ -3592,14 +3626,19 @@ document.getElementById("deleteCharacter").onclick = () => {
   }
 };
 
+document.getElementById("deleteCharacter").onclick = () => openCharacterDeleteModal(activeChar);
+
 function current() {
   return db.characters.find(c => c.id === activeChar);
 }
 
 function updateCharacterTagsList() {
-  const tagsList = db.characters.filter(c => c.id !== activeChar).map(c => c.name);
-  characterTagsList.innerHTML = tagsList.map(name => 
-    `<span style="display: inline-block; background: rgba(180,140,255,.15); padding: 3px 8px; border-radius: 3px; margin-right: 4px; cursor: pointer; font-size: 11px;" onclick="addCharacterTag('${name}')">${name}</span>`
+  const tagsList = db.characters.filter(c => c.id !== activeChar);
+  characterTagsList.innerHTML = tagsList.map(c =>
+    `<span style="display: inline-flex; align-items: center; background: rgba(180,140,255,.15); padding: 3px 8px; border-radius: 3px; margin-right: 4px; font-size: 11px;">
+      <span style="cursor: pointer;" onclick="addCharacterTag('${c.name}')">${c.name}</span>
+      <span style="cursor: pointer; margin-left: 4px; color: #d75a8f;" onclick="openCharacterDeleteModal('${c.id}')" title="Delete character">🗑️</span>
+    </span>`
   ).join("");
 }
 
