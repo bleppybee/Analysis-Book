@@ -1537,6 +1537,20 @@
     </div>
   </div>
 
+  <!-- ADD SUBFOLDER MODAL -->
+  <div id="addSubfolderModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeAddSubfolderModal()">&times;</span>
+      <h2>Add Subfolder</h2>
+      <p>Enter the name for the new subfolder:</p>
+      <input type="text" id="subfolderNameInput" placeholder="Subfolder name" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ffe0d0; border-radius: 4px;" />
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button id="confirmAddSubfolder" style="flex: 1;">Add</button>
+        <button onclick="closeAddSubfolderModal()" style="flex: 1;">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <script>
 const STORAGE = "ecology_v3";
 let db = JSON.parse(localStorage.getItem(STORAGE)) || { characters: [], dorms: [], units: [], others: [], characterFolders: [] };
@@ -1709,11 +1723,12 @@ function toggleMetadataPin() {
     // Pin at current position
     const rect = sidebar.getBoundingClientRect();
     sidebar.style.left = rect.left + 'px';
-    sidebar.style.top = '60px';
+    sidebar.style.top = rect.top + 'px';
     sidebar.style.position = 'fixed';
   } else {
     // Unpin but keep current position
-    sidebar.style.position = 'absolute';
+    sidebar.style.position = 'fixed';
+    sidebar.style.bottom = 'auto';
     // Don't reset left/top to avoid jumping
   }
 }
@@ -3259,13 +3274,7 @@ function renderCharacterFoldersManager() {
     addSubBtn.title = "Add subfolder";
     addSubBtn.onclick = (e) => {
       e.stopPropagation();
-      const subName = prompt("New subfolder name:");
-      if (subName && subName.trim()) {
-        if (!folder.children) folder.children = [];
-        folder.children.push({ name: subName.trim(), children: [] });
-        save();
-        renderCharacters();
-      }
+      openAddSubfolderModal(path);
     };
     span.appendChild(addSubBtn);
 
@@ -3780,8 +3789,11 @@ function selectCharacter(id) {
   charDesc.value = c.desc || "";
   searchResults.innerHTML = "";
   searchNotes.value = "";
-  // Close metadata sidebar when selecting a character
-  document.getElementById('metadataSidebar').classList.remove('open');
+  // Close metadata sidebar when selecting a character (unless pinned)
+  const sidebar = document.getElementById('metadataSidebar');
+  if (!sidebar.classList.contains('pinned')) {
+    sidebar.classList.remove('open');
+  }
   updateMetadataFields();
   renderFolders();
   renderTextMessages();
@@ -3841,6 +3853,7 @@ document.getElementById("charSearchInput").addEventListener("keypress", (e) => {
 });
 
 let characterToDelete = null;
+let currentSubfolderParent = null;
 
 function openCharacterDeleteModal(charId) {
   const c = db.characters.find(ch => ch.id === charId);
@@ -3854,6 +3867,34 @@ function closeCharacterDeleteModal() {
   document.getElementById('characterDeleteModal').classList.remove('open');
   characterToDelete = null;
 }
+
+function openAddSubfolderModal(parentPath) {
+  currentSubfolderParent = parentPath;
+  document.getElementById('subfolderNameInput').value = '';
+  document.getElementById('addSubfolderModal').classList.add('open');
+}
+
+function closeAddSubfolderModal() {
+  document.getElementById('addSubfolderModal').classList.remove('open');
+  currentSubfolderParent = null;
+}
+
+document.getElementById('confirmAddSubfolder').onclick = () => {
+  const subName = document.getElementById('subfolderNameInput').value.trim();
+  if (!subName) {
+    alert('Please enter a subfolder name');
+    return;
+  }
+
+  const folder = findFolderByPath(currentSubfolderParent);
+  if (!folder) return;
+
+  if (!folder.children) folder.children = [];
+  folder.children.push({ name: subName, children: [] });
+  save();
+  closeAddSubfolderModal();
+  renderCharacters();
+};
 
 document.getElementById('confirmDeleteCharacter').onclick = () => {
   const input = document.getElementById('deleteConfirmInput').value.trim();
