@@ -2868,6 +2868,68 @@ function renderCharacters() {
     }
   }
 
+  if (searchTerm) {
+    const results = db.characters
+      .filter(c => (c.name || "").toLowerCase().includes(searchTerm))
+      .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+    const header = document.createElement("div");
+    header.className = "character-search-header";
+    header.textContent = `Search results (${results.length})`;
+    characterList.appendChild(header);
+
+    if (results.length === 0) {
+      const emptyMsg = document.createElement("div");
+      emptyMsg.className = "character-search-empty";
+      emptyMsg.textContent = "No characters found.";
+      characterList.appendChild(emptyMsg);
+    } else {
+      const resultsList = document.createElement("div");
+      resultsList.className = "character-search-results";
+
+      results.forEach(c => {
+        const div = document.createElement("div");
+        div.className = "item character-search-item" + (c.id === activeChar ? " active" : "");
+        div.draggable = true;
+        div.dataset.charId = c.id;
+        div.dataset.folder = c.folder || "Unsorted";
+
+        const nameEl = document.createElement("div");
+        nameEl.textContent = c.name;
+        const pathEl = document.createElement("div");
+        pathEl.className = "character-search-path";
+        pathEl.textContent = (c.folder || "Unsorted").replaceAll("/", " › ");
+
+        div.appendChild(nameEl);
+        div.appendChild(pathEl);
+
+        div.ondragstart = (e) => {
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("charId", c.id);
+          e.dataTransfer.setData("fromFolder", c.folder || "Unsorted");
+        };
+
+        div.onclick = () => {
+          if (c.id === activeChar) {
+            clearCharacterSelection();
+          } else {
+            selectCharacter(c.id);
+          }
+        };
+
+        resultsList.appendChild(div);
+      });
+
+      characterList.appendChild(resultsList);
+    }
+
+    updateCharacterTagsList();
+    renderEmptyState();
+    renderRecentlyEdited();
+    renderQuickNotes();
+    return;
+  }
+
   // Group characters by folder path
   const grouped = {};
   function collectFolderPaths(folders, prefix = "") {

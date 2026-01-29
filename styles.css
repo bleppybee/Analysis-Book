@@ -92,6 +92,31 @@
       border-color: rgba(215, 90, 143, .60);
       font-weight: 600;
     }
+    .character-search-header {
+      font-size: 13px;
+      font-weight: 600;
+      color: #d75a8f;
+      margin: 6px 0 10px 0;
+    }
+    .character-search-results {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .character-search-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .character-search-path {
+      font-size: 12px;
+      color: #999;
+    }
+    .character-search-empty {
+      font-size: 12px;
+      color: #999;
+      padding: 8px 0;
+    }
 
     button {
       padding: 12px 14px;
@@ -1067,6 +1092,10 @@
       background: rgba(120, 120, 120, .25);
       border-color: rgba(160, 160, 160, .45);
       color: #e0e0e0;
+    }
+
+    body.dark-mode .character-search-path {
+      color: #aaa;
     }
 
     body.dark-mode .ux-help-btn {
