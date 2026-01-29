@@ -530,6 +530,215 @@
     .unit-member-name { font-size: 13px; font-weight: 600; color: #d75a8f; margin-top: 6px; text-align: center; }
 
   </style>
+
+  <style id="darkModeStyles">
+    /* DARK MODE STYLES */
+    body.dark-mode {
+      background: #1a1a1a;
+      color: #e0e0e0;
+    }
+
+    body.dark-mode .panel {
+      background: #2a2a2a;
+      border-right: 1px solid #404040;
+    }
+
+    body.dark-mode .panel-resize-handle {
+      background: linear-gradient(90deg, transparent, rgba(100, 100, 100, .1));
+    }
+
+    body.dark-mode .panel-resize-handle:hover {
+      background: linear-gradient(90deg, transparent, rgba(100, 100, 100, .3));
+    }
+
+    body.dark-mode .item {
+      background: rgba(100, 100, 100, .08);
+      border: 1.5px solid rgba(100, 100, 100, .20);
+    }
+
+    body.dark-mode .item:hover {
+      border-color: rgba(100, 100, 100, .50);
+      background: rgba(100, 100, 100, .12);
+    }
+
+    body.dark-mode .item.active {
+      background: linear-gradient(135deg, rgba(100, 100, 100, .25), rgba(50, 150, 200, .12));
+      border-color: rgba(100, 100, 100, .60);
+    }
+
+    body.dark-mode button {
+      background: linear-gradient(135deg, rgba(100, 100, 100, .20), rgba(50, 150, 200, .10));
+      border: 1.5px solid rgba(100, 100, 100, .30);
+      color: #e0e0e0;
+    }
+
+    body.dark-mode button:hover {
+      border-color: rgba(100, 100, 100, .70);
+      background: linear-gradient(135deg, rgba(100, 100, 100, .30), rgba(50, 150, 200, .15));
+    }
+
+    body.dark-mode input, body.dark-mode textarea {
+      background: #333;
+      border: 1.5px solid #555;
+      color: #e0e0e0;
+    }
+
+    body.dark-mode input:focus, body.dark-mode textarea:focus {
+      border-color: rgba(100, 100, 100, .60);
+      box-shadow: 0 0 12px rgba(100, 100, 100, .20);
+    }
+
+    body.dark-mode .folder {
+      background: #333;
+      border: 1.5px solid #555;
+    }
+
+    body.dark-mode .folder h4 {
+      background: rgba(100, 100, 100, .12);
+      border-bottom: 1.5px solid #555;
+    }
+
+    body.dark-mode .note {
+      background: #2a2a2a;
+      border: 1.5px solid rgba(50, 150, 200, .30);
+    }
+
+    body.dark-mode .note:hover {
+      border-color: rgba(50, 150, 200, .60);
+      background: #333;
+    }
+
+    body.dark-mode .modal-content {
+      background: #2a2a2a;
+      border: 2px solid rgba(100, 100, 100, .30);
+    }
+
+    body.dark-mode .lightbox {
+      background: rgba(0,0,0,.95);
+    }
+
+    body.dark-mode .search-result {
+      background: #2a2a2a;
+    }
+
+    body.dark-mode .metadata-sidebar {
+      background: #2a2a2a;
+      border-top: 1.5px solid #555;
+      border-right: 1.5px solid #555;
+    }
+
+    body.dark-mode #topToolbar {
+      background: #2a2a2a;
+      border-bottom: 1.5px solid #555;
+    }
+
+    body.dark-mode .project-menu {
+      background: #2a2a2a;
+      border: 1.5px solid #555;
+    }
+
+    body.dark-mode .message.other .message-bubble {
+      background: #333;
+      border: 1.5px solid rgba(50, 150, 200, .30);
+      color: #e0e0e0;
+    }
+
+    body.dark-mode .message.user .message-bubble {
+      background: linear-gradient(135deg, rgba(100, 100, 100, .25), rgba(50, 150, 200, .12));
+      border: 1.5px solid rgba(100, 100, 100, .35);
+      color: #e0e0e0;
+    }
+
+    body.dark-mode .gallery-item-label {
+      background: rgba(100, 100, 100, .08);
+    }
+
+    body.dark-mode .unit-member {
+      background: #333;
+      border: 1.5px solid #555;
+    }
+
+    body.dark-mode .unit-member:hover {
+      border-color: rgba(100, 100, 100, .6);
+      background: #3a3a3a;
+    }
+
+    body.dark-mode .timeline-item {
+      background: rgba(100, 100, 100, .08);
+    }
+
+    body.dark-mode .family-tree-node {
+      background: rgba(100, 100, 100, .12);
+      border: 1.5px solid rgba(100, 100, 100, .3);
+    }
+
+    body.dark-mode .family-tree-node:hover {
+      background: rgba(100, 100, 100, .2);
+      border-color: rgba(100, 100, 100, .6);
+    }
+
+    body.dark-mode .family-tree-node.selected {
+      background: rgba(100, 100, 100, .3);
+      border-color: rgba(100, 100, 100, .8);
+    }
+
+    body.dark-mode .unit-grid {
+      background: rgba(100, 100, 100, .04);
+      border: 1.5px dashed rgba(100, 100, 100, .2);
+    }
+
+    body.dark-mode .pasted-image-item {
+      border: 1.5px solid #555;
+    }
+
+    body.dark-mode .images-grid img {
+      border: 1.5px solid #555;
+    }
+
+    body.dark-mode .images-grid img:hover {
+      border-color: rgba(100, 100, 100, .60);
+    }
+
+    body.dark-mode .gallery-item {
+      border: 1.5px solid #555;
+    }
+
+    body.dark-mode .pasted-images-preview {
+      background: rgba(100, 100, 100, .06);
+    }
+
+    body.dark-mode .char-selector button.selected {
+      background: rgba(100, 100, 100, .35) !important;
+      border-color: rgba(100, 100, 100, .60) !important;
+    }
+
+    body.dark-mode .char-select-btn.selected {
+      background: rgba(100, 100, 100, .35) !important;
+      border-color: rgba(100, 100, 100, .60) !important;
+    }
+
+    body.dark-mode .emoji-btn.selected {
+      background: rgba(100, 100, 100, .25);
+      border-color: rgba(100, 100, 100, .50);
+    }
+
+    body.dark-mode .note-reaction {
+      background: #333;
+      border: 1px solid #555;
+    }
+
+    body.dark-mode .note-tag {
+      background: rgba(100, 100, 100, .15);
+    }
+
+    body.dark-mode .metadata-sidebar-resize-handle {
+      background: linear-gradient(135deg, rgba(100, 100, 100, .3), rgba(100, 100, 100, .1));
+    }
+
+    body.dark-mode .metadata-sidebar-resize-handle:hover {
+      background: linear-gradient(135deg, rgba(100, 100, 100, .5), rgba(100, 100, 100, .3));
+    }
+  </style>
 </head>
 <body>
   <!-- CHARACTERS -->
@@ -678,6 +887,7 @@
     <button onclick="loadData()" style="background: rgba(125, 211, 252, .2); border: 1.5px solid rgba(125, 211, 252, .4); color: #4fa2ff; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📂 Load Data</button>
     <button onclick="toggleMetadata()" style="background: rgba(180, 140, 255, .2); border: 1.5px solid rgba(180, 140, 255, .4); color: #b48cff; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📋 Metadata</button>
     <button onclick="resetLayout()" style="background: rgba(255, 150, 100, .2); border: 1.5px solid rgba(255, 150, 100, .4); color: #ff9664; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">↺ Reset Layout</button>
+    <button onclick="toggleDarkMode()" style="background: rgba(150, 100, 200, .2); border: 1.5px solid rgba(150, 100, 200, .4); color: #9664c8; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">🌙 Dark Mode</button>
     <button onclick="toggleToolbar()" style="background: rgba(200, 100, 100, .2); border: 1.5px solid rgba(200, 100, 100, .4); color: #c86464; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">▲ Hide</button>
   </div>
   
@@ -1249,13 +1459,49 @@ function toggleMetadata() {
   sidebar.classList.toggle('open');
 }
 
+/* ---------- DARK MODE ---------- */
+function toggleDarkMode() {
+  const body = document.body;
+  const isDark = body.classList.contains('dark-mode');
+  const button = document.querySelector('button[onclick="toggleDarkMode()"]');
+
+  if (isDark) {
+    body.classList.remove('dark-mode');
+    button.innerHTML = '🌙 Dark Mode';
+    localStorage.setItem('darkMode', 'false');
+  } else {
+    body.classList.add('dark-mode');
+    button.innerHTML = '☀️ Light Mode';
+    localStorage.setItem('darkMode', 'true');
+  }
+}
+
+// Restore dark mode on load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    const darkMode = localStorage.getItem('darkMode') === 'true';
+    const button = document.querySelector('button[onclick="toggleDarkMode()"]');
+    if (darkMode) {
+      document.body.classList.add('dark-mode');
+      if (button) button.innerHTML = '☀️ Light Mode';
+    }
+  });
+} else {
+  const darkMode = localStorage.getItem('darkMode') === 'true';
+  const button = document.querySelector('button[onclick="toggleDarkMode()"]');
+  if (darkMode) {
+    document.body.classList.add('dark-mode');
+    if (button) button.innerHTML = '☀️ Light Mode';
+  }
+}
+
 /* ---------- TOOLBAR VISIBILITY ---------- */
 function toggleToolbar() {
   const toolbar = document.getElementById('topToolbar');
   const toggleBtn = document.getElementById('toolbarToggleBtn');
-  
+
   const isHidden = toolbar.style.display === 'none';
-  
+
   if (isHidden) {
     toolbar.style.display = 'flex';
     toggleBtn.style.display = 'none';
@@ -3316,23 +3562,56 @@ function openNoteModal(noteId) {
   ).join("");
 
   const imagesDiv = document.getElementById("modalImages");
-  if (note.images.length) {
-    const label = document.createElement("strong");
-    label.textContent = `Images (${note.images.length}):`;
-    imagesDiv.innerHTML = "";
-    imagesDiv.appendChild(label);
+  imagesDiv.innerHTML = "";
+  
+  const label = document.createElement("strong");
+  label.textContent = `Images (${note.images.length}):`;
+  imagesDiv.appendChild(label);
+  
+  // Add file input for uploading new images
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = "image/*";
+  fileInput.multiple = true;
+  fileInput.style.cssText = "margin: 8px 0; width: 100%;";
+  fileInput.onchange = (e) => {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        note.images.push(ev.target.result);
+        save();
+        openNoteModal(editingNoteId); // Re-render modal
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+  imagesDiv.appendChild(fileInput);
+  
+  if (note.images.length > 0) {
     const grid = document.createElement("div");
     grid.className = "images-grid";
     note.images.forEach((img, i) => {
+      const container = document.createElement("div");
+      container.style.position = "relative";
+      
       const imgEl = document.createElement("img");
       imgEl.src = img;
-      imgEl.title = "Click to remove";
-      imgEl.onclick = () => removeImage(i);
-      grid.appendChild(imgEl);
+      imgEl.onclick = () => openLightbox(img);
+      container.appendChild(imgEl);
+      
+      const removeBtn = document.createElement("button");
+      removeBtn.textContent = "✕";
+      removeBtn.style.cssText = "position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,.6); color: #fff; border: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center;";
+      removeBtn.onclick = (e) => {
+        e.stopPropagation();
+        removeImage(i);
+      };
+      container.appendChild(removeBtn);
+      
+      grid.appendChild(container);
     });
     imagesDiv.appendChild(grid);
-  } else {
-    imagesDiv.innerHTML = "";
   }
 
   noteModal.classList.add("open");
