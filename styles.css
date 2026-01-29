@@ -348,6 +348,28 @@
     .folder.collapsed .folder-notes { display: none; }
     .folder-delete { font-size: 14px; cursor: pointer; opacity: .6; color: #d75a8f; }
     .folder-delete:hover { opacity: 1; }
+    .folder-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+    }
+    .folder-edit { font-size: 13px; cursor: pointer; opacity: .7; color: #4fa2ff; }
+    .folder-edit:hover { opacity: 1; }
+    .folder-rename-input {
+      font-size: 13px;
+      padding: 2px 6px;
+      border: 1.5px solid #ffe0d0;
+      border-radius: 6px;
+      background: #fffdfb;
+      color: #2d2d2d;
+      min-width: 120px;
+    }
+    .folder-rename-input:focus {
+      border-color: rgba(125, 211, 252, .6);
+      box-shadow: 0 0 8px rgba(125, 211, 252, .25);
+      outline: none;
+    }
 
     .folder-notes {
       padding: 12px;
@@ -482,6 +504,11 @@
     #quickNotesPanel .ux-quick-notes-images { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 6px; margin-top: 8px; }
     #quickNotesPanel .ux-quick-notes-images img { width: 100%; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #ffe0d0; }
     #quickNotesPanel .ux-quick-notes-remove { width: auto; padding: 2px 6px; font-size: 11px; margin: 0; }
+    #quickNotesPanel .quick-notes-hint {
+      font-size: 11px;
+      color: #b48cff;
+      margin-top: 4px;
+    }
     #quickNotesToggle.active {
       background: rgba(125, 211, 252, .35);
       border-color: rgba(125, 211, 252, .6);
@@ -1123,6 +1150,12 @@
       background: rgba(100, 100, 100, .12);
       border-bottom: 1.5px solid #555;
     }
+    body.dark-mode .folder-edit { color: #7dbdff; }
+    body.dark-mode .folder-rename-input {
+      background: #2a2a2a;
+      border-color: #555;
+      color: #e0e0e0;
+    }
 
     body.dark-mode .note {
       background: #2a2a2a;
@@ -1275,6 +1308,7 @@
     body.dark-mode .note-tag {
       background: rgba(100, 100, 100, .15);
     }
+    body.dark-mode .quick-notes-hint { color: #c7b7ff; }
 
     body.dark-mode .ux-saved-badge {
       background: rgba(100, 100, 100, .2);

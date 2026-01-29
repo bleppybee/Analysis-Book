@@ -2700,6 +2700,20 @@ function renderCharacterFoldersManager() {
     nameEl.style.userSelect = "none";
     span.appendChild(nameEl);
 
+    if (folder.name !== "Unsorted") {
+      const editBtn = document.createElement("span");
+      editBtn.className = "folder-edit";
+      editBtn.textContent = "✎";
+      editBtn.title = "Rename folder";
+      editBtn.draggable = false;
+      editBtn.onmousedown = (e) => e.stopPropagation();
+      editBtn.onclick = (e) => {
+        e.stopPropagation();
+        startInlineRename(nameEl, (value) => renameCharacterFolder(path, value));
+      };
+      span.appendChild(editBtn);
+    }
+
     // Show total character count
     const count = document.createElement("span");
     count.style.cssText = "font-size: 10px; color: #999; margin-left: 4px;";
@@ -3106,7 +3120,11 @@ function renderCharacters() {
       header.appendChild(toggleIcon);
 
       const titleEl = document.createElement("span");
-      titleEl.textContent = folder.name;
+      titleEl.style.display = "inline-flex";
+      titleEl.style.alignItems = "center";
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = folder.name;
+      titleEl.appendChild(nameSpan);
       if (totalChars > 0) {
         const count = document.createElement("span");
         count.style.cssText = "font-size: 10px; color: #999; margin-left: 4px;";
@@ -3115,6 +3133,23 @@ function renderCharacters() {
       }
       titleEl.style.flex = "1";
       header.appendChild(titleEl);
+
+      if (folder.name !== "Unsorted") {
+        const actions = document.createElement("div");
+        actions.className = "folder-actions";
+        const editBtn = document.createElement("span");
+        editBtn.className = "folder-edit";
+        editBtn.textContent = "✎";
+        editBtn.title = "Rename folder";
+        editBtn.draggable = false;
+        editBtn.onmousedown = (e) => e.stopPropagation();
+        editBtn.onclick = (e) => {
+          e.stopPropagation();
+          startInlineRename(nameSpan, (value) => renameCharacterFolder(folderPath, value));
+        };
+        actions.appendChild(editBtn);
+        header.appendChild(actions);
+      }
 
       // Check collapsed state
       let isCollapsed = localStorage.getItem(`folder-collapsed-${folderPath}`) === "true";
@@ -3304,6 +3339,101 @@ function createCharacterFolder() {
   document.getElementById("newCharFolderName").value = "";
   save();
   renderCharacters();
+}
+
+function startInlineRename(nameEl, onCommit) {
+  if (!nameEl || !nameEl.parentElement) return;
+  const parent = nameEl.parentElement;
+  if (parent.querySelector(".folder-rename-input")) return;
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "folder-rename-input";
+  input.value = (nameEl.textContent || "").trim();
+  input.setAttribute("aria-label", "Rename folder");
+  input.onclick = (e) => e.stopPropagation();
+  input.onmousedown = (e) => e.stopPropagation();
+
+  nameEl.style.display = "none";
+  parent.insertBefore(input, nameEl);
+  input.focus();
+  input.select();
+
+  const cleanup = () => {
+    if (input.parentNode) input.parentNode.removeChild(input);
+    nameEl.style.display = "";
+  };
+
+  const commit = () => {
+    const value = input.value.trim();
+    if (!value) {
+      showToast("Please enter a folder name");
+      input.focus();
+      return;
+    }
+    const ok = onCommit(value);
+    if (!ok) {
+      input.focus();
+      return;
+    }
+    cleanup();
+  };
+
+  const cancel = () => {
+    cleanup();
+  };
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commit();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      cancel();
+    }
+  });
+  input.addEventListener("blur", () => {
+    commit();
+  });
+}
+
+function renameCharacterFolder(path, newNameRaw) {
+  if (!path) return false;
+  if (path === "Unsorted") {
+    showToast("Cannot rename the Unsorted folder");
+    return false;
+  }
+  const folder = findFolderByPath(path);
+  if (!folder) return false;
+  const currentName = folder.name;
+  const newName = (newNameRaw || "").trim();
+  if (!newName) {
+    showToast("Please enter a folder name");
+    return false;
+  }
+  if (newName.includes("/")) {
+    showToast('Folder name cannot include "/"');
+    return false;
+  }
+  if (newName === "Unsorted") {
+    showToast('Folder name cannot be "Unsorted"');
+    return false;
+  }
+  if (newName === currentName) return true;
+
+  const parentPath = getParentPath(path);
+  const siblings = getChildrenArray(parentPath);
+  if (siblings && siblings.some(f => f.name === newName)) {
+    showToast("Folder already exists");
+    return false;
+  }
+
+  folder.name = newName;
+  const newBase = parentPath ? `${parentPath}/${newName}` : newName;
+  updateCharacterFolderPaths(path, newBase);
+  save();
+  renderCharacters();
+  return true;
 }
 
 function deleteCharacterFolder(path) {
@@ -3683,13 +3813,33 @@ function renderFolders() {
     headerText.style.cursor = "pointer";
     headerText.onclick = () => folder.classList.toggle("collapsed");
 
+    const actions = document.createElement("div");
+    actions.className = "folder-actions";
+
+    if (folderName !== "Unsorted") {
+      const editBtn = document.createElement("span");
+      editBtn.className = "folder-edit";
+      editBtn.textContent = "✎";
+      editBtn.title = "Rename folder";
+      editBtn.draggable = false;
+      editBtn.onmousedown = (e) => e.stopPropagation();
+      editBtn.onclick = (e) => {
+        e.stopPropagation();
+        startInlineRename(headerText, (value) => renameNoteFolder(folderName, value));
+      };
+      actions.appendChild(editBtn);
+    }
+
     const deleteBtn = document.createElement("span");
     deleteBtn.className = "folder-delete";
     deleteBtn.textContent = "✕";
     deleteBtn.onclick = () => deleteFolder(folderName);
 
     header.appendChild(headerText);
-    if (folderName !== "Unsorted") header.appendChild(deleteBtn);
+    if (folderName !== "Unsorted") {
+      actions.appendChild(deleteBtn);
+      header.appendChild(actions);
+    }
     header.draggable = folderName !== "Unsorted";
     header.ondragstart = () => {
       if (folderName === "Unsorted") return;
@@ -3783,6 +3933,41 @@ function renderFolders() {
   uxUpdateTagSuggestions();
   renderEmptyState();
   renderRecentlyEdited();
+}
+
+function renameNoteFolder(folderName, newNameRaw) {
+  const c = current();
+  if (!c) return false;
+  if (folderName === "Unsorted") {
+    showToast("Cannot rename the Unsorted folder");
+    return false;
+  }
+  const newName = (newNameRaw || "").trim();
+  if (!newName) {
+    showToast("Please enter a folder name");
+    return false;
+  }
+  if (newName.includes("/")) {
+    showToast('Folder name cannot include "/"');
+    return false;
+  }
+  if (newName === "Unsorted") {
+    showToast('Folder name cannot be "Unsorted"');
+    return false;
+  }
+  if (newName === folderName) return true;
+  if (c.folders.includes(newName)) {
+    showToast("Folder already exists");
+    return false;
+  }
+
+  c.folders = c.folders.map(f => (f === folderName ? newName : f));
+  c.notes.forEach(n => {
+    if (n.folder === folderName) n.folder = newName;
+  });
+  save();
+  renderFolders();
+  return true;
 }
 
 function deleteFolder(folderName) {
