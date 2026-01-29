@@ -441,6 +441,52 @@
       overflow-y: auto;
       z-index: 100;
       display: none;
+      cursor: move;
+    }
+
+    .metadata-sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .metadata-sidebar-controls {
+      display: flex;
+      gap: 5px;
+    }
+
+    .metadata-sidebar-controls button {
+      background: rgba(180, 140, 255, .2);
+      border: 1px solid rgba(180, 140, 255, .4);
+      color: #b48cff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .metadata-sidebar.popped-out {
+      position: absolute;
+      z-index: 1000;
+    }
+
+    .metadata-sidebar.pinned {
+      position: fixed;
+      top: 60px;
+      bottom: auto;
+      left: 20px;
+      height: 400px;
+    }
+    .metadata-sidebar.expanded {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      width: auto;
+      height: auto;
+      border: none;
+      margin: 0;
+      padding: 24px;
     }
     .metadata-sidebar.open { display: block; }
     .metadata-sidebar-resize-handle {
@@ -463,6 +509,101 @@
     .metadata-sidebar-item select { font-size: 12px; padding: 6px; width: 100%; margin: 4px 0; border: 1px solid #ffe0d0; border-radius: 4px; }
     .roommates-controls { display: flex; gap: 6px; margin-top: 8px; }
     .roommates-controls button { flex: 1; padding: 6px; font-size: 11px; width: auto; margin: 0; }
+
+    .metadata-sidebar-width-resize-handle {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      width: 6px;
+      background: linear-gradient(90deg, transparent, rgba(215, 90, 143, .3));
+      cursor: ew-resize;
+      transition: background .15s;
+      z-index: 10;
+    }
+    .metadata-sidebar-width-resize-handle:hover {
+      background: linear-gradient(90deg, transparent, rgba(215, 90, 143, .5));
+    }
+
+    .metadata-sidebar-left-width-resize-handle {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 6px;
+      background: linear-gradient(90deg, rgba(215, 90, 143, .3), transparent);
+      cursor: ew-resize;
+      transition: background .15s;
+      z-index: 10;
+    }
+    .metadata-sidebar-left-width-resize-handle:hover {
+      background: linear-gradient(90deg, rgba(215, 90, 143, .5), transparent);
+    }
+
+    /* METADATA EDIT MODAL */
+    #metadataEditModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.4);
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    #metadataEditModal.open { display: flex; align-items: center; justify-content: center; }
+    #metadataEditModal .modal-content {
+      background: #fff5f0;
+      border: 2px solid rgba(215, 90, 143, .30);
+      border-radius: 14px;
+      padding: 28px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    #metadataEditModal .modal-close {
+      float: right;
+      cursor: pointer;
+      font-size: 28px;
+      opacity: .6;
+      color: #d75a8f;
+    }
+    #metadataEditModal .modal-close:hover { opacity: 1; }
+    #metadataEditModal h2 {
+      margin: 0 0 20px 0;
+      color: #d75a8f;
+    }
+    #metadataEditModal .form-group {
+      margin-bottom: 16px;
+    }
+    #metadataEditModal label {
+      display: block;
+      font-size: 16px;
+      font-weight: 600;
+      color: #d75a8f;
+      margin-bottom: 6px;
+    }
+    #metadataEditModal input, #metadataEditModal select {
+      width: 100%;
+      padding: 11px 12px;
+      background: #fff;
+      border: 1.5px solid #ffe0d0;
+      color: #2d2d2d;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 16px;
+    }
+    #metadataEditModal input:focus, #metadataEditModal select:focus {
+      outline: none;
+      border-color: rgba(215, 90, 143, .60);
+      box-shadow: 0 0 12px rgba(215, 90, 143, .20);
+    }
+
+    .metadata-sidebar-controls button.pinned {
+      background: rgba(180, 140, 255, .7);
+      border-color: rgba(180, 140, 255, .9);
+      font-weight: bold;
+    }
 
     /* DORM MODAL */
     #dormPanel {
@@ -835,6 +976,7 @@
 
     <div style="margin: 24px 0; border: 0; border-top: 1.5px solid #ffe0d0;"></div>
 
+    <button onclick="toggleMetadata()" style="background: linear-gradient(135deg, rgba(180, 140, 255, .20), rgba(79, 210, 255, .12));">👤 Metadata</button>
     <button id="viewTextMessages" style="background: linear-gradient(135deg, rgba(125, 211, 252, .20), rgba(79, 210, 255, .12));">💬 Text Messages</button>
     <button id="viewGallery" style="background: linear-gradient(135deg, rgba(180, 140, 255, .20), rgba(79, 210, 255, .12));">🖼️ Image Gallery</button>
     <button id="viewRelationships" style="background: linear-gradient(135deg, rgba(155, 89, 182, .20), rgba(142, 68, 173, .12));">💑 Relationships</button>
@@ -933,7 +1075,7 @@
     <button onclick="exportBackup()" style="background: rgba(255, 193, 7, .2); border: 1.5px solid rgba(255, 193, 7, .4); color: #ffc107; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📤 Export Backup</button>
     <button onclick="importBackup()" style="background: rgba(255, 193, 7, .2); border: 1.5px solid rgba(255, 193, 7, .4); color: #ffc107; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📥 Import Backup</button>
     <button onclick="loadData()" style="background: rgba(125, 211, 252, .2); border: 1.5px solid rgba(125, 211, 252, .4); color: #4fa2ff; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📂 Load Data</button>
-    <button onclick="toggleMetadata()" style="background: rgba(180, 140, 255, .2); border: 1.5px solid rgba(180, 140, 255, .4); color: #b48cff; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📋 Metadata</button>
+
     <button onclick="resetLayout()" style="background: rgba(255, 150, 100, .2); border: 1.5px solid rgba(255, 150, 100, .4); color: #ff9664; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">↺ Reset Layout</button>
     <button onclick="toggleDarkMode()" style="background: rgba(150, 100, 200, .2); border: 1.5px solid rgba(150, 100, 200, .4); color: #9664c8; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">🌙 Dark Mode</button>
     <button onclick="toggleToolbar()" style="background: rgba(200, 100, 100, .2); border: 1.5px solid rgba(200, 100, 100, .4); color: #c86464; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">▲ Hide</button>
@@ -1014,8 +1156,17 @@
 
   <!-- METADATA SIDEBAR -->
   <div class="metadata-sidebar" id="metadataSidebar">
+    <div class="metadata-sidebar-header">
+      <h4>Character Info</h4>
+    <div class="metadata-sidebar-controls">
+      <button id="metadataPinBtn" onclick="toggleMetadataPin()" title="Pin to top">📌</button>
+      <button id="metadataPopOutBtn" onclick="openMetadataEditModal()" title="Edit">⛶</button>
+      <button id="metadataHideBtn" onclick="toggleMetadata()" title="Hide">✕</button>
+    </div>
+    </div>
     <div class="metadata-sidebar-resize-handle" id="metadataResizeHandle"></div>
-    <h4>Character Info</h4>
+    <div class="metadata-sidebar-width-resize-handle"></div>
+    <div class="metadata-sidebar-left-width-resize-handle"></div>
     <div class="metadata-sidebar-item">
       <label style="font-size: 11px; color: #999; display: block; margin-bottom: 2px;">Age</label>
       <input type="text" id="charAge" placeholder="Age" />
@@ -1548,6 +1699,106 @@ function toggleMetadata() {
   sidebar.classList.toggle('open');
 }
 
+function toggleMetadataPin() {
+  const sidebar = document.getElementById('metadataSidebar');
+  const pinBtn = document.getElementById('metadataPinBtn');
+  sidebar.classList.toggle('pinned');
+  pinBtn.classList.toggle('pinned');
+  if (sidebar.classList.contains('pinned')) {
+    sidebar.classList.remove('expanded');
+    // Pin at current position
+    const rect = sidebar.getBoundingClientRect();
+    sidebar.style.left = rect.left + 'px';
+    sidebar.style.top = '60px';
+    sidebar.style.position = 'fixed';
+  } else {
+    // Unpin but keep current position
+    sidebar.style.position = 'absolute';
+    // Don't reset left/top to avoid jumping
+  }
+}
+
+function toggleMetadataPopOut() {
+  const sidebar = document.getElementById('metadataSidebar');
+  sidebar.classList.toggle('popped-out');
+  if (sidebar.classList.contains('popped-out')) {
+    sidebar.classList.remove('pinned');
+    sidebar.style.position = 'absolute';
+    sidebar.style.left = '20px';
+    sidebar.style.top = '20px';
+    sidebar.style.bottom = 'auto';
+  } else {
+    sidebar.style.position = '';
+    sidebar.style.left = '';
+    sidebar.style.top = '';
+    sidebar.style.bottom = '';
+  }
+}
+
+// Drag functionality for metadata sidebar
+let isDraggingMetadata = false;
+let dragStartX = 0;
+let dragStartY = 0;
+let initialLeft = 0;
+let initialTop = 0;
+
+document.getElementById('metadataSidebar').addEventListener('mousedown', (e) => {
+  if (e.target.closest('.metadata-sidebar-controls') || e.target.closest('.metadata-sidebar-resize-handle') || e.target.closest('.metadata-sidebar-width-resize-handle') || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  const sidebar = document.getElementById('metadataSidebar');
+  if (sidebar.classList.contains('pinned')) return;
+  isDraggingMetadata = true;
+  dragStartX = e.clientX;
+  dragStartY = e.clientY;
+  const rect = sidebar.getBoundingClientRect();
+  initialLeft = rect.left;
+  initialTop = rect.top;
+  e.preventDefault();
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isDraggingMetadata) return;
+  const sidebar = document.getElementById('metadataSidebar');
+  const deltaX = e.clientX - dragStartX;
+  const deltaY = e.clientY - dragStartY;
+  sidebar.style.left = (initialLeft + deltaX) + 'px';
+  sidebar.style.top = (initialTop + deltaY) + 'px';
+  sidebar.style.bottom = 'auto';
+});
+
+document.addEventListener('mouseup', () => {
+  isDraggingMetadata = false;
+});
+
+// Width resizing for metadata sidebar
+let isResizingWidth = false;
+let resizeWidthStartX = 0;
+let resizeWidthStartWidth = 0;
+
+document.getElementById('metadataSidebar').addEventListener('mousedown', (e) => {
+  if (e.target.id === 'metadataResizeHandle') {
+    const sidebar = document.getElementById('metadataSidebar');
+    if (sidebar.classList.contains('pinned')) return;
+    isResizingWidth = true;
+    resizeWidthStartX = e.clientX;
+    resizeWidthStartWidth = sidebar.offsetWidth;
+    e.preventDefault();
+  }
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isResizingWidth) return;
+  const sidebar = document.getElementById('metadataSidebar');
+  const deltaX = e.clientX - resizeWidthStartX;
+  const newWidth = resizeWidthStartWidth + deltaX;
+  if (newWidth >= 200 && newWidth <= 600) {
+    sidebar.style.width = newWidth + 'px';
+  }
+});
+
+document.addEventListener('mouseup', () => {
+  isResizingWidth = false;
+});
+
 /* ---------- DARK MODE ---------- */
 function toggleDarkMode() {
   const body = document.body;
@@ -1632,13 +1883,14 @@ const metadataSidebar = document.getElementById('metadataSidebar');
 
 if (metadataResizeHandle) {
   metadataResizeHandle.addEventListener('mousedown', (e) => {
+    if (metadataSidebar.classList.contains('pinned')) return;
     isResizingMetadata = true;
     e.preventDefault();
   });
 
   document.addEventListener('mousemove', (e) => {
     if (!isResizingMetadata) return;
-    
+
     const newHeight = window.innerHeight - e.clientY;
     if (newHeight >= 150 && newHeight <= 800) {
       metadataSidebar.style.height = newHeight + 'px';
@@ -1649,13 +1901,43 @@ if (metadataResizeHandle) {
   document.addEventListener('mouseup', () => {
     isResizingMetadata = false;
   });
-  
+
   // Restore saved height on load
   const savedHeight = localStorage.getItem('metadataSidebarHeight');
   if (savedHeight) {
     metadataSidebar.style.height = savedHeight + 'px';
   }
 }
+
+// Width resizing for metadata sidebar right handle
+let isResizingSidebarWidth = false;
+let resizeSidebarWidthStartX = 0;
+let resizeSidebarWidthStartWidth = 0;
+
+document.addEventListener('mousedown', (e) => {
+  if (e.target.classList.contains('metadata-sidebar-width-resize-handle')) {
+    const sidebar = document.getElementById('metadataSidebar');
+    if (sidebar.classList.contains('pinned')) return;
+    isResizingSidebarWidth = true;
+    resizeSidebarWidthStartX = e.clientX;
+    resizeSidebarWidthStartWidth = sidebar.offsetWidth;
+    e.preventDefault();
+  }
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isResizingSidebarWidth) return;
+  const sidebar = document.getElementById('metadataSidebar');
+  const deltaX = e.clientX - resizeSidebarWidthStartX;
+  const newWidth = resizeSidebarWidthStartWidth + deltaX;
+  if (newWidth >= 200 && newWidth <= 600) {
+    sidebar.style.width = newWidth + 'px';
+  }
+});
+
+document.addEventListener('mouseup', () => {
+  isResizingSidebarWidth = false;
+});
 
 /* ---------- PANEL RESIZING ---------- */
 let currentResizingPanel = null;
@@ -3498,11 +3780,11 @@ function selectCharacter(id) {
   charDesc.value = c.desc || "";
   searchResults.innerHTML = "";
   searchNotes.value = "";
+  // Close metadata sidebar when selecting a character
+  document.getElementById('metadataSidebar').classList.remove('open');
   updateMetadataFields();
   renderFolders();
   renderTextMessages();
-  // Show metadata sidebar automatically
-  document.getElementById('metadataSidebar').classList.add('open');
   renderCharacters();
 }
 
@@ -4873,6 +5155,99 @@ updateLastSavedDisplay();
 
 renderCharacters();
 save();
+
+// METADATA EDIT MODAL FUNCTIONS
+function openMetadataEditModal() {
+  const modal = document.getElementById('metadataEditModal');
+  const ageInput = document.getElementById('metadataAge');
+  const birthdayInput = document.getElementById('metadataBirthday');
+  const heightInput = document.getElementById('metadataHeight');
+
+  if (activeChar && db.characters.find(c => c.id === activeChar)) {
+    const char = db.characters.find(c => c.id === activeChar);
+    ageInput.value = char.age || '';
+    birthdayInput.value = char.birthday || '';
+    heightInput.value = char.height || '';
+  }
+
+  modal.classList.add('open');
+}
+
+function saveMetadataEdit() {
+  const ageInput = document.getElementById('metadataAge');
+  const birthdayInput = document.getElementById('metadataBirthday');
+  const heightInput = document.getElementById('metadataHeight');
+
+  if (activeChar && db.characters.find(c => c.id === activeChar)) {
+    const char = db.characters.find(c => c.id === activeChar);
+    char.age = ageInput.value;
+    char.birthday = birthdayInput.value;
+    char.height = heightInput.value;
+    save();
+    updateMetadataFields();
+    renderCharacters();
+  }
+
+  closeMetadataEditModal();
+}
+
+function closeMetadataEditModal() {
+  document.getElementById('metadataEditModal').classList.remove('open');
+}
+
+// LEFT RESIZE FOR METADATA SIDEBAR
+let isResizingLeft = false;
+let startXLeft, startWidthLeft;
+
+document.addEventListener('mousedown', (e) => {
+  if (e.target.classList.contains('metadata-sidebar-left-width-resize-handle')) {
+    isResizingLeft = true;
+    startXLeft = e.clientX;
+    startWidthLeft = document.getElementById('metadataPanel').offsetWidth;
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+  }
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (isResizingLeft) {
+    const dx = startXLeft - e.clientX;
+    const newWidth = startWidthLeft + dx;
+    if (newWidth > 200 && newWidth < window.innerWidth / 2) {
+      document.getElementById('metadataPanel').style.width = newWidth + 'px';
+    }
+  }
+});
+
+document.addEventListener('mouseup', () => {
+  if (isResizingLeft) {
+    isResizingLeft = false;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  }
+});
+
   </script>
+
+  <!-- METADATA EDIT MODAL -->
+  <div id="metadataEditModal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeMetadataEditModal()">&times;</span>
+      <h2>Edit Metadata</h2>
+      <div class="form-group">
+        <label for="metadataAge">Age</label>
+        <input type="text" id="metadataAge" placeholder="Age">
+      </div>
+      <div class="form-group">
+        <label for="metadataBirthday">Birthday</label>
+        <input type="text" id="metadataBirthday" placeholder="MM/DD">
+      </div>
+      <div class="form-group">
+        <label for="metadataHeight">Height</label>
+        <input type="text" id="metadataHeight" placeholder="Height">
+      </div>
+      <button onclick="saveMetadataEdit()" style="padding: 10px 20px; background: #d75a8f; color: white; border: none; border-radius: 8px; cursor: pointer;">Save</button>
+    </div>
+  </div>
 </body>
 </html>

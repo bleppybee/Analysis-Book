@@ -9,3 +9,4 @@
 - [x] Enhance selected character highlight styling
 - [x] Update JavaScript functions for breadcrumb updates and panel dimming
 - [x] Test all changes and check for regressions
+- [x] Add check to prevent resizing metadata sidebar when pinned
