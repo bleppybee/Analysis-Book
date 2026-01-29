@@ -219,23 +219,32 @@
   <div id="relationshipBackdrop" onclick="closeRelationshipsPanel()"></div>
 
   <!-- TOP TOOLBAR -->
-  <div id="topToolbar" style="position: fixed; top: 0; right: 200px; background: #fff5f0; border-bottom: 1.5px solid #ffe0d0; padding: 12px 16px; display: flex; gap: 8px; z-index: 100; transition: all .3s;">
-    <button onclick="openProjectMenu()" style="background: rgba(230, 100, 100, .2); border: 1.5px solid rgba(230, 100, 100, .4); color: #e66464; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">⚙️ Project</button>
-    <button onclick="saveData()" style="background: rgba(76, 175, 140, .2); border: 1.5px solid rgba(76, 175, 140, .4); color: #4cb58c; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">💾 Save Data</button>
-    <button onclick="exportBackup()" style="background: rgba(255, 193, 7, .2); border: 1.5px solid rgba(255, 193, 7, .4); color: #ffc107; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📤 Export Backup</button>
-    <button onclick="importBackup()" style="background: rgba(255, 193, 7, .2); border: 1.5px solid rgba(255, 193, 7, .4); color: #ffc107; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📥 Import Backup</button>
-    <button onclick="loadData()" style="background: rgba(125, 211, 252, .2); border: 1.5px solid rgba(125, 211, 252, .4); color: #4fa2ff; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📂 Load Data</button>
-
-    <button onclick="resetLayout()" style="background: rgba(255, 150, 100, .2); border: 1.5px solid rgba(255, 150, 100, .4); color: #ff9664; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">↺ Reset Layout</button>
-    <button onclick="toggleDarkMode()" style="background: rgba(150, 100, 200, .2); border: 1.5px solid rgba(150, 100, 200, .4); color: #9664c8; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">🌙 Dark Mode</button>
-    <button onclick="toggleToolbar()" style="background: rgba(200, 100, 100, .2); border: 1.5px solid rgba(200, 100, 100, .4); color: #c86464; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">▲ Hide</button>
-    <button id="quickNotesToggle" style="background: rgba(125, 211, 252, .2); border: 1.5px solid rgba(125, 211, 252, .4); color: #2b8fba; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📝 Quick Notes</button>
-    <div id="uxSavedBadge" class="ux-saved-badge" data-state="saved">🟢 Saved</div>
-    <div id="lastSavedDisplay" style="font-size: 11px; color: #666; align-self: center; margin-left: 8px;"></div>
+  <div id="topToolbar">
+    <div class="toolbar-left">
+      <button onclick="openProjectMenu()" style="background: rgba(230, 100, 100, .2); border: 1.5px solid rgba(230, 100, 100, .4); color: #e66464; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">⚙️ Project</button>
+      <button onclick="saveData()" style="background: rgba(76, 175, 140, .2); border: 1.5px solid rgba(76, 175, 140, .4); color: #4cb58c; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">💾 Save Data</button>
+      <button onclick="exportBackup()" style="background: rgba(255, 193, 7, .2); border: 1.5px solid rgba(255, 193, 7, .4); color: #ffc107; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📤 Export Backup</button>
+      <button onclick="importBackup()" style="background: rgba(255, 193, 7, .2); border: 1.5px solid rgba(255, 193, 7, .4); color: #ffc107; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📥 Import Backup</button>
+      <button onclick="loadData()" style="background: rgba(125, 211, 252, .2); border: 1.5px solid rgba(125, 211, 252, .4); color: #4fa2ff; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📂 Load Data</button>
+      <button onclick="resetLayout()" style="background: rgba(255, 150, 100, .2); border: 1.5px solid rgba(255, 150, 100, .4); color: #ff9664; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">↺ Reset Layout</button>
+      <button onclick="toggleDarkMode()" style="background: rgba(150, 100, 200, .2); border: 1.5px solid rgba(150, 100, 200, .4); color: #9664c8; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">🌙 Dark Mode</button>
+      <button onclick="openTutorial()" style="background: rgba(150, 100, 200, .15); border: 1.5px solid rgba(150, 100, 200, .35); color: #9664c8; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📘 Tutorial</button>
+      <button id="quickNotesToggle" style="background: rgba(125, 211, 252, .2); border: 1.5px solid rgba(125, 211, 252, .4); color: #2b8fba; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">📝 Quick Notes</button>
+    </div>
+    <div class="toolbar-right">
+      <button id="toolbarHideBtn" onclick="toggleToolbar()" title="Hide toolbar" aria-label="Hide toolbar">▴</button>
+    </div>
   </div>
   
   <!-- TOOLBAR TOGGLE BUTTON (Hidden) -->
-  <button id="toolbarToggleBtn" onclick="toggleToolbar()" style="position: fixed; top: 0; right: 200px; background: rgba(200, 100, 100, .2); border: 1.5px solid rgba(200, 100, 100, .4); color: #c86464; padding: 8px 12px; border-radius: 0 0 6px 6px; cursor: pointer; font-size: 13px; font-weight: 600; display: none; z-index: 99;">▼ Show</button>
+  <button id="toolbarToggleBtn" onclick="toggleToolbar()">Show</button>
+
+  <!-- STATUS CORNER -->
+  <div id="statusCorner">
+    <div id="uxSavedBadge" class="ux-saved-badge" data-state="saved">🟢 Saved</div>
+    <div id="lastSavedDisplay"></div>
+  </div>
+
 
   <!-- PROJECT MENU BACKDROP -->
   <div id="projectMenuBackdrop" onclick="closeProjectMenu()" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,.25); z-index: 999;"></div>
@@ -247,6 +256,9 @@
     </div>
     <button onclick="newProject()" style="width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; border-bottom: 1px solid #ffe0d0; color: #2d2d2d; font-size: 14px; cursor: pointer; font-weight: 500; transition: all .15s;">
       ✨ New Project
+    </button>
+    <button onclick="openTutorial(); closeProjectMenu();" style="width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; border-bottom: 1px solid #ffe0d0; color: #2d2d2d; font-size: 14px; cursor: pointer; font-weight: 500; transition: all .15s;">
+      📘 Show Tutorial
     </button>
   </div>
 
@@ -754,6 +766,25 @@
       <div style="display: flex; gap: 10px; margin-top: 20px;">
         <button id="confirmAddSubfolder" style="flex: 1;">Add</button>
         <button onclick="closeAddSubfolderModal()" style="flex: 1;">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TUTORIAL OVERLAY -->
+  <div id="tutorialOverlay" class="tutorial-overlay" aria-hidden="true">
+    <div class="tutorial-card" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
+      <div class="tutorial-header">
+        <h2 id="tutorialTitle">Welcome</h2>
+        <button class="tutorial-close" type="button" onclick="closeTutorial(true)" aria-label="Close tutorial">&times;</button>
+      </div>
+      <div id="tutorialBody" class="tutorial-body"></div>
+      <div class="tutorial-footer">
+        <div class="tutorial-progress" id="tutorialProgress"></div>
+        <div class="tutorial-actions">
+          <button id="tutorialBackBtn" type="button">Back</button>
+          <button id="tutorialNextBtn" type="button">Next</button>
+          <button id="tutorialSkipBtn" type="button" class="tutorial-skip">Skip for this project</button>
+        </div>
       </div>
     </div>
   </div>

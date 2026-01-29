@@ -1,10 +1,12 @@
 const STORAGE = "ecology_v3";
+const isFirstRun = !localStorage.getItem(STORAGE);
 let db = JSON.parse(localStorage.getItem(STORAGE)) || { characters: [], dorms: [], units: [], others: [], characterFolders: [] };
 
 // Ensure dorms, units, others, and characterFolders arrays exist (for old data)
 if (!db.dorms) db.dorms = [];
 if (!db.units) db.units = [];
 if (!db.others) db.others = [];
+if (db.tutorialDismissed === undefined) db.tutorialDismissed = !isFirstRun;
 
 // Migrate characterFolders to nested structure if needed
 if (!db.characterFolders || db.characterFolders.length === 0 || typeof db.characterFolders[0] === 'string') {
@@ -277,6 +279,126 @@ function closeProjectMenu() {
   document.getElementById('projectMenu').style.display = 'none';
 }
 
+/* ---------- TUTORIAL ---------- */
+const tutorialSteps = [
+  {
+    title: "Welcome to Character Ecology",
+    body: `
+      <p>This quick tour shows the core workflow so you can get productive fast.</p>
+      <ul>
+        <li>Create characters, then click one to open their details.</li>
+        <li>Add notes, tags, and images to track story ideas.</li>
+        <li>Use Quick Notes for fast capture without leaving your flow.</li>
+      </ul>
+    `
+  },
+  {
+    title: "Characters & Folders",
+    body: `
+      <p>The left panel holds all characters. You can:</p>
+      <ul>
+        <li>Create folders and drag characters between them.</li>
+        <li>Search by name to jump directly to a character.</li>
+        <li>Click a character to open their notes and details.</li>
+      </ul>
+    `
+  },
+  {
+    title: "Notes & Tags",
+    body: `
+      <p>Notes are where story information lives.</p>
+      <ul>
+        <li>Add a story, chapter, raw thoughts, and a summary.</li>
+        <li>Tag other characters to connect related notes.</li>
+        <li>Search notes by text, summary, tags, and emojis.</li>
+      </ul>
+    `
+  },
+  {
+    title: "Quick Notes & Toolbars",
+    body: `
+      <p>Quick Notes lets you jot ideas without selecting a character.</p>
+      <ul>
+        <li>Paste images with Ctrl+V to attach visual references.</li>
+        <li>Use tags to send the note to multiple characters.</li>
+        <li>Project menu lets you save, export, and start a new project.</li>
+      </ul>
+    `
+  }
+];
+
+let tutorialIndex = 0;
+
+function renderTutorialStep() {
+  const title = document.getElementById("tutorialTitle");
+  const body = document.getElementById("tutorialBody");
+  const progress = document.getElementById("tutorialProgress");
+  const backBtn = document.getElementById("tutorialBackBtn");
+  const nextBtn = document.getElementById("tutorialNextBtn");
+  if (!title || !body || !progress || !backBtn || !nextBtn) return;
+  const step = tutorialSteps[tutorialIndex];
+  title.textContent = step.title;
+  body.innerHTML = step.body;
+  progress.textContent = `Step ${tutorialIndex + 1} of ${tutorialSteps.length}`;
+  backBtn.style.display = tutorialIndex === 0 ? "none" : "inline-flex";
+  nextBtn.textContent = tutorialIndex === tutorialSteps.length - 1 ? "Finish" : "Next";
+}
+
+function openTutorial() {
+  const overlay = document.getElementById("tutorialOverlay");
+  if (!overlay) return;
+  tutorialIndex = 0;
+  renderTutorialStep();
+  overlay.classList.add("open");
+  overlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("tutorial-open");
+}
+
+function closeTutorial(markDismissed = true) {
+  const overlay = document.getElementById("tutorialOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("open");
+  overlay.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("tutorial-open");
+  if (markDismissed) {
+    db.tutorialDismissed = true;
+    save();
+  }
+}
+
+function maybeShowTutorial() {
+  if (!db.tutorialDismissed) {
+    openTutorial();
+  }
+}
+
+document.addEventListener("click", (e) => {
+  const target = e.target;
+  if (target && target.id === "tutorialOverlay") {
+    closeTutorial(true);
+  }
+});
+
+document.getElementById("tutorialBackBtn")?.addEventListener("click", () => {
+  if (tutorialIndex > 0) {
+    tutorialIndex -= 1;
+    renderTutorialStep();
+  }
+});
+
+document.getElementById("tutorialNextBtn")?.addEventListener("click", () => {
+  if (tutorialIndex < tutorialSteps.length - 1) {
+    tutorialIndex += 1;
+    renderTutorialStep();
+  } else {
+    closeTutorial(true);
+  }
+});
+
+document.getElementById("tutorialSkipBtn")?.addEventListener("click", () => {
+  closeTutorial(true);
+});
+
 function newProject() {
   if (!confirm('Start a new project?\n\nThis will clear all current data. Make sure you have saved your work first!')) {
     return;
@@ -288,7 +410,8 @@ function newProject() {
     dorms: [],
     units: [],
     others: [],
-    folders: []
+    characterFolders: [{ name: "Unsorted", children: [] }],
+    tutorialDismissed: false
   };
   
   save();
@@ -316,6 +439,8 @@ function newProject() {
   
   closeProjectMenu();
   showToast('New project started! Begin creating your characters.');
+  applySelectionView();
+  openTutorial();
 }
 
 function exportAllData() {
@@ -501,6 +626,7 @@ function toggleDarkMode() {
     button.innerHTML = '☀️ Light Mode';
     localStorage.setItem('darkMode', 'true');
   }
+  updateToolbarHeight();
 }
 
 // Restore dark mode on load
@@ -523,19 +649,23 @@ if (document.readyState === 'loading') {
 }
 
 /* ---------- TOOLBAR VISIBILITY ---------- */
-function toggleToolbar() {
+function updateToolbarHeight() {
   const toolbar = document.getElementById('topToolbar');
-  const toggleBtn = document.getElementById('toolbarToggleBtn');
+  if (!toolbar) return;
+  const height = Math.ceil(toolbar.getBoundingClientRect().height);
+  if (height > 0) {
+    document.documentElement.style.setProperty('--toolbar-height', `${height}px`);
+  }
+}
 
-  const isHidden = toolbar.style.display === 'none';
-
+function toggleToolbar() {
+  const isHidden = document.body.classList.contains('toolbar-hidden');
   if (isHidden) {
-    toolbar.style.display = 'flex';
-    toggleBtn.style.display = 'none';
+    document.body.classList.remove('toolbar-hidden');
     localStorage.setItem('toolbarVisible', 'true');
+    updateToolbarHeight();
   } else {
-    toolbar.style.display = 'none';
-    toggleBtn.style.display = 'block';
+    document.body.classList.add('toolbar-hidden');
     localStorage.setItem('toolbarVisible', 'false');
   }
 }
@@ -543,25 +673,20 @@ function toggleToolbar() {
 // Restore toolbar visibility on load
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    const toolbarVisible = localStorage.getItem('toolbarVisible') !== 'false';
-    const toolbar = document.getElementById('topToolbar');
-    const toggleBtn = document.getElementById('toolbarToggleBtn');
-    
-    if (!toolbarVisible) {
-      toolbar.style.display = 'none';
-      toggleBtn.style.display = 'block';
-    }
+    document.body.classList.remove('toolbar-hidden');
+    localStorage.setItem('toolbarVisible', 'true');
+    updateToolbarHeight();
   });
 } else {
-  const toolbarVisible = localStorage.getItem('toolbarVisible') !== 'false';
-  const toolbar = document.getElementById('topToolbar');
-  const toggleBtn = document.getElementById('toolbarToggleBtn');
-  
-  if (!toolbarVisible) {
-    toolbar.style.display = 'none';
-    toggleBtn.style.display = 'block';
-  }
+  document.body.classList.remove('toolbar-hidden');
+  localStorage.setItem('toolbarVisible', 'true');
+  updateToolbarHeight();
 }
+window.addEventListener('resize', () => {
+  if (!document.body.classList.contains('toolbar-hidden')) {
+    updateToolbarHeight();
+  }
+});
 
 /* ---------- METADATA SIDEBAR RESIZING ---------- */
 let isResizingMetadata = false;
@@ -4940,6 +5065,7 @@ uxInitialized = true;
 renderEmptyState();
 renderRecentlyEdited();
 applySelectionView();
+maybeShowTutorial();
 
 // METADATA EDIT MODAL FUNCTIONS
 function openMetadataEditModal() {

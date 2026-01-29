@@ -1,7 +1,11 @@
     * { box-sizing: border-box; }
+    :root {
+      --toolbar-height: 56px;
+      --breadcrumb-height: 40px;
+    }
     body {
       margin: 0;
-      padding-top: 40px;
+      padding-top: calc(var(--toolbar-height) + var(--breadcrumb-height));
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: #fff9f7;
       color: #2d2d2d;
@@ -14,6 +18,9 @@
     body.quick-notes-open {
       grid-template-columns: 300px 1fr 1fr 1fr;
     }
+    body.toolbar-hidden {
+      padding-top: var(--breadcrumb-height);
+    }
 
     .panel {
       background: #fff5f0;
@@ -22,6 +29,110 @@
       overflow-y: auto;
       max-height: 100vh;
       position: relative;
+    }
+    #topToolbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #fff5f0;
+      border-bottom: 1.5px solid #ffe0d0;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      z-index: 1100;
+      transition: transform .25s ease;
+    }
+    body.toolbar-hidden #topToolbar {
+      transform: translateY(-100%);
+    }
+    .toolbar-left {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: nowrap;
+      flex: 1;
+      min-width: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+    .toolbar-left::-webkit-scrollbar {
+      height: 6px;
+    }
+    .toolbar-left::-webkit-scrollbar-thumb {
+      background: rgba(215, 90, 143, .35);
+      border-radius: 999px;
+    }
+    .toolbar-left::-webkit-scrollbar-track {
+      background: rgba(215, 90, 143, .08);
+    }
+    #topToolbar button {
+      white-space: nowrap;
+    }
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    #toolbarHideBtn {
+      position: relative;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      margin: 0;
+      border-radius: 6px;
+      background: rgba(200, 100, 100, .15);
+      border: 1px solid rgba(200, 100, 100, .35);
+      color: #c86464;
+      font-size: 14px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    #toolbarHideBtn:hover {
+      background: rgba(200, 100, 100, .25);
+      border-color: rgba(200, 100, 100, .55);
+    }
+    #toolbarToggleBtn {
+      position: fixed;
+      top: 8px;
+      right: 12px;
+      width: auto;
+      margin: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(200, 100, 100, .15);
+      border: 1.5px solid rgba(200, 100, 100, .35);
+      color: #c86464;
+      z-index: 1101;
+    }
+    body.toolbar-hidden #toolbarToggleBtn {
+      display: inline-flex;
+    }
+    #statusCorner {
+      position: fixed;
+      top: 8px;
+      right: 72px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 1102;
+    }
+    body.toolbar-hidden #statusCorner {
+      right: 84px;
+    }
+    #lastSavedDisplay {
+      font-size: 11px;
+      color: #666;
+      white-space: nowrap;
     }
 
     .panel-resize-handle {
@@ -403,6 +514,78 @@
     }
     .modal-close { float: right; cursor: pointer; font-size: 28px; opacity: .6; color: #d75a8f; }
     .modal-close:hover { opacity: 1; }
+
+    /* TUTORIAL OVERLAY */
+    body.tutorial-open { overflow: hidden; }
+    .tutorial-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(25, 20, 28, .55);
+      z-index: 3000;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .tutorial-overlay.open { display: flex; }
+    .tutorial-card {
+      width: min(720px, 92vw);
+      background: #fff5f0;
+      border: 2px solid rgba(215, 90, 143, .30);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 16px 40px rgba(0,0,0,.25);
+    }
+    .tutorial-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .tutorial-close {
+      width: auto;
+      margin: 0;
+      padding: 4px 10px;
+      font-size: 22px;
+      background: none;
+      border: none;
+      color: #d75a8f;
+    }
+    .tutorial-body {
+      margin-top: 12px;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #2d2d2d;
+    }
+    .tutorial-body ul { margin: 10px 0 0 20px; }
+    .tutorial-footer {
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .tutorial-progress {
+      font-size: 12px;
+      color: #999;
+    }
+    .tutorial-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tutorial-actions button {
+      width: auto;
+      margin: 0;
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+    .tutorial-skip {
+      background: rgba(215, 90, 143, .08);
+      border: 1.5px solid rgba(215, 90, 143, .25);
+      color: #d75a8f;
+    }
 
     /* IMAGE LIGHTBOX */
     .lightbox {
@@ -835,7 +1018,7 @@
     /* BREADCRUMB STYLES */
     .breadcrumb {
       position: fixed;
-      top: 0;
+      top: var(--toolbar-height);
       left: 0;
       right: 0;
       background: #fff5f0;
@@ -847,6 +1030,9 @@
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+    body.toolbar-hidden .breadcrumb {
+      top: 0;
     }
     .breadcrumb-item {
       cursor: pointer;
@@ -970,6 +1156,25 @@
     body.dark-mode #topToolbar {
       background: #2a2a2a;
       border-bottom: 1.5px solid #555;
+    }
+    body.dark-mode #relationshipsPanel,
+    body.dark-mode #familyPanel {
+      background: #2a2a2a;
+      border-left: 1.5px solid #555;
+      color: #e0e0e0;
+    }
+    body.dark-mode #toolbarHideBtn {
+      background: rgba(120, 120, 120, .2);
+      border-color: rgba(160, 160, 160, .4);
+      color: #e0e0e0;
+    }
+    body.dark-mode #toolbarToggleBtn {
+      background: rgba(120, 120, 120, .2);
+      border-color: rgba(160, 160, 160, .4);
+      color: #e0e0e0;
+    }
+    body.dark-mode #lastSavedDisplay {
+      color: #aaa;
     }
 
     body.dark-mode .project-menu {
@@ -1110,4 +1315,23 @@
 
     body.dark-mode .metadata-sidebar-resize-handle:hover {
       background: linear-gradient(135deg, rgba(100, 100, 100, .5), rgba(100, 100, 100, .3));
+    }
+
+    body.dark-mode .tutorial-card {
+      background: #2a2a2a;
+      border-color: #555;
+    }
+
+    body.dark-mode .tutorial-body {
+      color: #e0e0e0;
+    }
+
+    body.dark-mode .tutorial-progress {
+      color: #aaa;
+    }
+
+    body.dark-mode .tutorial-skip {
+      background: rgba(100, 100, 100, .2);
+      border-color: rgba(160, 160, 160, .45);
+      color: #e0e0e0;
     }
